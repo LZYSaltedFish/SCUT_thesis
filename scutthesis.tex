@@ -9,7 +9,7 @@
 %参考文献设置
 \usepackage[backend=biber,style=gb7714-2015,gbalign=gb7714-2015,gbpub=false,gbnamefmt = lowercase]{biblatex}
 \addbibresource[location=local]{MyLibrary.bib} % 如果在其他盘，改为相对路径。比如F盘，改为：F/MyLibrary.bib
-\addbibresource[location=local]{mybibfile2.bib} % 无论什么来源的bib文件，只要由参考文献的BibTeX组成，都可以使用此模板。参考文献的BibTeX获取方法可百度
+% \addbibresource[location=local]{mybibfile2.bib} % 无论什么来源的bib文件，只要由参考文献的BibTeX组成，都可以使用此模板。参考文献的BibTeX获取方法可百度
 %页眉页脚设置
 \usepackage{fancyhdr}
 \usepackage{listings}
@@ -39,6 +39,10 @@
 
 \makeatletter
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{booktabs}
+
 \providecommand{\LyX}{\texorpdfstring%
 	{L\kern-.1667em\lower.25em\hbox{Y}\kern-.125emX\@}
 	{LyX}}
@@ -47,13 +51,15 @@
 \makeatother
 \begin{document}
 	%%%%%%%%%%%%%草稿封面设置%%%%%%%%%%%%%使用“正式封面”时不需要理会这部分
-	\title{LaTeX模板使用说明}	
-	\author{作者姓名}	
-	\supervisor{指导教师：xxx\ 教授}	
-	\institute{华南理工大学}	
-	\date{2020年5月20日}
+	\includepdf[pages={1-2}]{thesis_cover.pdf}
+	% \title{LaTeX模板使用说明}	
+	% \author{作者姓名}	
+	% \supervisor{指导教师：xxx\ 教授}	
+	% \institute{华南理工大学}	
+	% \date{2020年5月20日}
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	\maketitle	
+	% \maketitle	
+
 	\frontmatter	%此后为罗马数字页码，页面类型为plain
 	\include{abstract} % 中英文摘要
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -64,20 +70,20 @@
 	% \listoffigures	%插图目录（可选）
 	% \listoftables	%表格目录（可选）
 	
-	\begingroup
-		\renewcommand*{\addvspace}[1]{}
-		\newcommand{\loflabel}{图} 
-		\renewcommand{\numberline}[1]{\loflabel~#1\hspace*{1em}}	
-		\listoffigures
+	% \begingroup
+	% 	\renewcommand*{\addvspace}[1]{}
+	% 	\newcommand{\loflabel}{图} 
+	% 	\renewcommand{\numberline}[1]{\loflabel~#1\hspace*{1em}}	
+	% 	\listoffigures
 		
-		\newcommand{\lotlabel}{表}
-		\renewcommand{\numberline}[1]{\lotlabel~#1\hspace*{1em}}
-		\listoftables
-	\endgroup
+	% 	\newcommand{\lotlabel}{表}
+	% 	\renewcommand{\numberline}[1]{\lotlabel~#1\hspace*{1em}}
+	% 	\listoftables
+	% \endgroup
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	\include{symbols}	% 符号对照表(可选)
-	\include{abbreviation} 	% 缩略词	
+	% \include{symbols}	% 符号对照表(可选)
+	% \include{abbreviation} 	% 缩略词	
 	
 	\mainmatter %此后为阿拉伯数字页码
 	
@@ -99,8 +105,8 @@
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	\include{conclusion} %结论
 	 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% bibtex参考文献设置  （原版）
-%%	\bibliographystyle{scutthesis}
-%%	\bibliography{F:/MyLibrary}
+	% \bibliographystyle{scutthesis}
+	% \bibliography{F:/MyLibrary}
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% biber参考文献设置	——by MCH
 	%\renewcommand*{\bibfont}{\refbodyfont}			% 设置文献著录字号比正文小一号（五号），需要小四号请注释该行. % 不推荐使用small，而是使用cls文件中精确定义了的字号。
@@ -111,8 +117,8 @@
  	% 只有一个附录
 % 	\include{appendix}
  	% 有多个附录
-	\include{appendix1} %附录1
-	\include{appendix2} %附录2
+	% \include{appendix1} %附录1
+	% \include{appendix2} %附录2
  	%%%%%%%%%%%%%%%%%%%
 	\include{pub} %成果
 	\include{ack} %致谢
