@@ -3,9 +3,9 @@
 
 自LLM诞生以来，弥合人类意图和LLM之间的对齐差距一直是一个核心问题。在GPT-3\cite{DBLP:conf/nips/BrownMRSKDNSSAA20}时代，提示工程\cite{DBLP:conf/chi/ReynoldsM21}，以及自动提示搜索\cite{DBLP:conf/emnlp/ShinRLWS20}和Prefix-Tuning\cite{DBLP:journals/corr/abs-2103-10385,lester-etal-2021-power,DBLP:conf/acl/LiL20}，已经发展成为特定任务的校准者。然而，它们后来被指令微调\cite{DBLP:conf/iclr/WeiBZGYLDDL22}所取代和目前的RLHF方法\cite{DBLP:conf/nips/Ouyang0JAWMZASR22,DBLP:journals/corr/abs-2212-08073}，将llm与人类偏好相结合，以训练llm将用户从繁重的提示中解放出来。
 
-尽管如此，以训练为基础的结盟并不是唯一的解决方案。本质上，对齐差距可以从两个方向缩小:要么调整llm以接近人类偏好，要么改变人类提示以迎合llm的快速理解。例如，在图2中，我们展示了一个典型的用户提示——“告诉我关于哈利波特的事情”，这可能会导致一个简短的LLM响应。对于更详细和信息丰富的响应，虽然RLHF可以通过培训LLM来帮助实现相同的目标，但我们可以通过修改用户提示来实现相同的目标:“提供哈利波特系列的全面概述，包括书籍、电影、角色、主题和影响。在你的回答中要准确和翔实”。
+尽管如此，以训练为基础的结盟并不是唯一的解决方案。本质上，对齐差距可以从两个方向缩小:要么调整llm以接近人类偏好，要么改变人类提示以迎合llm的快速理解。例如，在图2中，展示了一个典型的用户提示——“告诉我关于哈利波特的事情”，这可能会导致一个简短的LLM响应。对于更详细和信息丰富的响应，虽然RLHF可以通过培训LLM来帮助实现相同的目标，但可以通过修改用户提示来实现相同的目标:“提供哈利波特系列的全面概述，包括书籍、电影、角色、主题和影响。在你的回答中要准确和翔实”。
 
-更实际的是，随着llm变得越来越大，并且只能通过api访问，基于培训的对齐禁止小公司和个人开发人员按他们的意愿廉价和方便地对齐llm。相反，与从反馈方法中学习相比，偏好感知提示是有效的、非侵入的，并且更易于解释。因此，我们坚信，自动偏好感知提示是RLHF在LLM对齐中的一个有希望的补充，因此提出QAHF作为这个方向的第一个框架。
+更实际的是，随着llm变得越来越大，并且只能通过api访问，基于培训的对齐禁止小公司和个人开发人员按他们的意愿廉价和方便地对齐llm。相反，与从反馈方法中学习相比，偏好感知提示是有效的、非侵入的，并且更易于解释。因此，自动偏好感知提示是RLHF在LLM对齐中的一个有希望的补充，因此提出QAHF作为这个方向的第一个框架。
 
 % 如上所述，我们的任务是优化用户输入，以帮助llm产生更好的响应。我们将用户输入表示为Xuser。我们的目标是构建一个函数F，将Xuser映射到它的优化版本，称为Xopt。为了实现这一点，引入了带注释的人类偏好，因为首选响应表明良好的模型输出，而另一个则表明较差的输出。通过捕获这些偏好数据之间的差异，可以将人类的偏好纳入用户指令中，使它们与llm可以做的事情更一致，从而使llm的输出更好地与人类的偏好一致。受最近利用llm作为评估者的工作启发(Wang等人，2023;郑等人，2023)，我们认为llm具有理解不同响应中不同特征的能力。因此，我们选择利用llm来获得Xopt。具体来说，每个样本表示为(Xuser, Ygood, Ybad)，其中Ygood表示有利响应，Ybad表示不利响应。因此，使用LLM的提示优化过程可以表示为Xopt = LLM(Xuser, Ygood, Ybad)。最后，我们通过在(Xuser, Xopt)对上训练一个较小的序列到序列模型来构建F函数。
 
@@ -46,7 +46,7 @@
 
 \subsection{查询有效性验证阶段}
 
-LLM生成的问题可能仍然存在理解偏差问题，若直接使用带噪声的数据进行后续训练，可能加重模型理解偏差，损害模型性能。因此，我们将优化后的问题重新输入系统，得到新的模型回复，并利用大型语言模型的反思能力，对新回复的质量进行评判，以筛选出有效的偏好数据样本，提高数据集信噪比。并得到最终的优化问题三元组数据集。其中，本阶段所使用的查询有效性验证提示词如表\ref{query_validation_prompt}所示。
+LLM生成的问题可能仍然存在理解偏差问题，若直接使用带噪声的数据进行后续训练，可能加重模型理解偏差，损害模型性能。因此，本节将优化后的问题重新输入系统，得到新的模型回复，并利用大型语言模型的反思能力，对新回复的质量进行评判，以筛选出有效的偏好数据样本，提高数据集信噪比。并得到最终的优化问题三元组数据集。其中，本阶段所使用的查询有效性验证提示词如表\ref{query_validation_prompt}所示。
 % TODO：包含三步骤...
 
 \begin{table}
@@ -82,9 +82,9 @@ LLM生成的问题可能仍然存在理解偏差问题，若直接使用带噪�
 
 \subsection{数据集介绍}
 
-FinGPT-FiQA\cite{wang2023fingptbenchmark}是Wang等人创建的人工评估数据集。它包含了17.1k个金融领域的用户查询与回答样本，这些样本均采样于真实应用场景。我们从中抽取了1000条样本作为本节实验的测试数据。
+FinGPT-FiQA\cite{wang2023fingptbenchmark}是Wang等人创建的人工评估数据集。它包含了17.1k个金融领域的用户查询与回答样本，这些样本均采样于真实应用场景。本节从中抽取了1000条样本作为实验的测试数据。
 
-AlphaFin-test是本文第三章中构建的数据集的一部分，它包含1000条问答数据对，数据集从StockQA和research数据集中采样。AlphaFin-test数据集使我们能够评估模型在资本市场上的能力。
+AlphaFin-test是本文第三章中构建的数据集的一部分，它包含1000条问答数据对，数据集从StockQA和research数据集中采样。AlphaFin-test数据集能够评估模型在资本市场上的能力。
 
 \subsection{评价指标}
 
@@ -92,7 +92,7 @@ AlphaFin-test是本文第三章中构建的数据集的一部分，它包含1000
 
 \subsection{基础模型与基准方法}
 
-基座模型：
+基础模型：
 
 Qwen-7B-Chat\cite{qwen}：通义千问-7B（Qwen-7B）是阿里云研发的通义千问大模型系列的70亿参数规模的模型。Qwen-7B是基于Transformer的大语言模型, 在超大规模的预训练数据上进行训练得到。预训练数据类型多样，覆盖广泛，包括大量网络文本、专业书籍、代码等。
 
@@ -100,9 +100,9 @@ FinGPT\cite{yang2023fingpt}：FinGPT 是2023年6月哥伦比亚大学联合上�
 
 ChatGLM2-6B\cite{DBLP:conf/iclr/ZengLDWL0YXZXTM23}：ChatGLM2-6B是智谱AI及清华KEG实验室发布的中英双语对话模型。它使用了 GLM 的混合目标函数，经过了 1.4T 中英标识符的预训练与人类偏好对齐训练，在CEval、GSM8K等数据集上得到大幅度的性能提升。同时，ChatGLM2-6B使用了 Multi-Query Attention，提高了生成速度，同时也降低了生成过程中 KV Cache 的显存占用。同时，ChatGLM2-6B 采用 Causal Mask 进行对话训练，连续对话时可复用前面轮次的 KV Cache，进一步优化了显存占用。
 
-ChatGP\cite{DBLP:conf/nips/Ouyang0JAWMZASR22}T：ChatGPT全名Chat Generative Pre-trained Transformer，是由OpenAI开发的一款基于人工智能技术的聊天机器人程序，于2022年11月30日发布。它基于GPT（Generative Pre-trained Transformer）架构，这是一种自然语言处理（NLP）模型，能够理解和生成人类的自然语言。
+ChatGPT\cite{DBLP:conf/nips/Ouyang0JAWMZASR22}：ChatGPT全名Chat Generative Pre-trained Transformer，是由OpenAI开发的一款基于人工智能技术的聊天机器人程序，于2022年11月30日发布。它基于GPT（Generative Pre-trained Transformer）架构，这是一种自然语言处理（NLP）模型，能够理解和生成人类的自然语言。
 
-对比方法：
+基准方法：
 
 PPO\cite{DBLP:journals/corr/SchulmanWDRK17}：PPO算法是在Policy Gradient算法的基础上由来的,Policy Gradient是一种on-policy的方法,他首先要利用现有策略和环境互动,产生学习资料,然后利用产生的资料,按照Policy Gradient的方法更新策略参数。然后再用新的策略去交互、更新、交互、更新,如此重复。
 
@@ -110,7 +110,7 @@ BPO\cite{DBLP:journals/corr/abs-2311-04155}：黑盒提示优化（Black-Box Pro
 
 \subsection{实现细节}
 
-对于QAHF，我们使用Qwen-7B作为优化器基座模型，在所构建的问题优化三元组数据集上对优化器模型训练了3个epoch。我们只需要保存最后一个checkpoint。在训练阶段，我们使用AdamW优化器，$\beta1$=0.9和$\beta2$=0.999。本实验将学习率设置为2e-5，热启动步长为0.1\%，使用线性衰减学习率。每个GPU的batch size大小为4。对于RLHF训练，RM模型训练和PPO优化只训练1个epoch。其中，本实验RM模型的训练数据来自于本章方法所构建的人类偏好数据集,RM模型在同分布测试集上达到了78\%的准确率。。所有实验均在8×80GB NVIDIA A800 gpu上进行。QAHF采用Top-p=0.9和Temperature=0.6进行推理解码，而所有测试的基座模型都使用默认的解码策略。
+对于QAHF，本节使用Qwen-7B作为优化器基座模型，在所构建的问题优化三元组数据集上对优化器模型训练了3个epoch。只需要保存最后一个checkpoint。在训练阶段，本节使用AdamW优化器，$\beta1$=0.9和$\beta2$=0.999。本实验将学习率设置为2e-5，热启动步长为0.1\%，使用线性衰减学习率。每个GPU的batch size大小为4。对于RLHF训练，RM模型训练和PPO优化只训练1个epoch。其中，本实验RM模型的训练数据来自于本章方法所构建的人类偏好数据集,RM模型在同分布测试集上达到了78\%的准确率。所有实验均在8×80GB NVIDIA A800 GPU上进行。QAHF采用Top-p=0.9和Temperature=0.6进行推理解码，而所有测试的基座模型都使用默认的解码策略。
 
 \subsection{与现有方法的性能比较}
 
@@ -123,10 +123,10 @@ BPO\cite{DBLP:journals/corr/abs-2311-04155}：黑盒提示优化（Black-Box Pro
 		\cline{2-9}
 		~ & A & B & A win & Tie & B win & A win & Tie & B win & ~ \\
 		\hline
-		ChatGLM & Ours & ori. & 58.0\% & 21.0\% & 21.0\% & 61.0\% & 5.2\% & 33.8\% & +32.1\% \\
-		FinGPT & Ours & ori. & 57.5\% & 22.4\% & 20.1\% & 54.3\% & 15.1\% & 30.6\% & +30.5\% \\
-		Qwen & Ours & ori. & 52.2\% & 15.5\% & 32.3\% & 54.0\% & 12.3\% & 33.7\% & +20.1\% \\
-		gpt-3.5-turbo & Ours & ori. & 39.0\% & 26.3\% & 34.7\% & 41.1\% & 27.1\% & 31.8\% & +6.8\% \\
+		ChatGLM & QAHF & ori. & 58.0\% & 21.0\% & 21.0\% & 61.0\% & 5.2\% & 33.8\% & +32.1\% \\
+		FinGPT & QAHF & ori. & 57.5\% & 22.4\% & 20.1\% & 54.3\% & 15.1\% & 30.6\% & +30.5\% \\
+		Qwen & QAHF & ori. & 52.2\% & 15.5\% & 32.3\% & 54.0\% & 12.3\% & 33.7\% & +20.1\% \\
+		ChatGPT & QAHF & ori. & 39.0\% & 26.3\% & 34.7\% & 41.1\% & 27.1\% & 31.8\% & +6.8\% \\
 		\bottomrule[2pt]
 	\end{tabular}
 \end{table}
@@ -143,12 +143,12 @@ BPO\cite{DBLP:journals/corr/abs-2311-04155}：黑盒提示优化（Black-Box Pro
 		~ & A & B & A win & Tie & B win & A win & Tie & B win & ~ \\
 		\hline
 		\multirow{3}*{ChatGLM} & BPO & ori. & 43.2\% & 22.4\% & 34.4\% & 40.7\% & 15.6\% & 43.7\% & +3.0\% \\
-		~ & Ours & BPO & 36.8\% & 39.6\% & 23.6\% & 52.5\% & 12.7\% & 34.8\% & +15.4\% \\
-		~ & Ours & ori. & 58.0\% & 21.0\% & 21.0\% & 61.0\% & 5.2\% & 33.8\% & +32.1\% \\
+		~ & QAHF & BPO & 36.8\% & 39.6\% & 23.6\% & 52.5\% & 12.7\% & 34.8\% & +15.4\% \\
+		~ & QAHF & ori. & 58.0\% & 21.0\% & 21.0\% & 61.0\% & 5.2\% & 33.8\% & +32.1\% \\
 		\hline
-		\multirow{3}*{gpt-3.5-turbo} & BPO & ori. & 39.4\% & 12.3\% & 48.3\% & 43.6\% & 25.5\% & 30.9\% & +1.9\% \\
-		~ & Ours & BPO & 31.1\% & 38.5\% & 30.4\% & 40.9\% & 28.2\% & 30.9\% & +5.4\% \\
-		~ & Ours & ori. & 39.0\% & 26.3\% & 34.7\% & 41.1\% & 27.1\% & 31.8\% & +6.8\% \\
+		\multirow{3}*{ChatGPT} & BPO & ori. & 39.4\% & 12.3\% & 48.3\% & 43.6\% & 25.5\% & 30.9\% & +1.9\% \\
+		~ & QAHF & BPO & 31.1\% & 38.5\% & 30.4\% & 40.9\% & 28.2\% & 30.9\% & +5.4\% \\
+		~ & QAHF & ori. & 39.0\% & 26.3\% & 34.7\% & 41.1\% & 27.1\% & 31.8\% & +6.8\% \\
 		\bottomrule[2pt]
 	\end{tabular}
 \end{table}
@@ -165,8 +165,8 @@ BPO\cite{DBLP:journals/corr/abs-2311-04155}：黑盒提示优化（Black-Box Pro
 		~ & A & B & A win & Tie & B win & ~ \\
 		\hline
 		\multirow{3}*{ChatGLM} & PPO & ori. & 13.7\% & 75.4\% & 10.9\% & +2.8\% \\
-		~ & Ours & PPO & 49.3\% & 20.6\% & 30.1\% & +19.2\% \\
-		~ & Ours & ori. & 61.0\% & 5.2\% & 33.8\% & +27.2\% \\
+		~ & QAHF & PPO & 49.3\% & 20.6\% & 30.1\% & +19.2\% \\
+		~ & QAHF & ori. & 61.0\% & 5.2\% & 33.8\% & +27.2\% \\
 		\bottomrule[2pt]
 	\end{tabular}
 \end{table}
@@ -180,22 +180,24 @@ BPO\cite{DBLP:journals/corr/abs-2311-04155}：黑盒提示优化（Black-Box Pro
 		\toprule[2pt]
 		类型 & 问题 \\
 		\hline
-		原始 & \begin{tabular}{p{13cm}}
+		原始 & \begin{tabular}{p{12cm}}
 			招商证券2020年下半年市场份额如何？
 		\end{tabular} \\
 		\hline
-		BPO & \begin{tabular}{p{13cm}}
+		BPO & \begin{tabular}{p{12cm}}
 			招商证券2020年下半年在代理买卖证券业务、股权投资收益、财富管理等方面的表现如何？
 		\end{tabular} \\
 		\hline
-		QAHF & \begin{tabular}{p{13cm}}
+		\begin{tabular}{c}
+			QAHF \\ (本章方法)
+		\end{tabular} & \begin{tabular}{p{12cm}}
 			根据招商证券2020年下半年的业务增长情况和市场排名，描述该公司在市场份额方面的表现。
 		\end{tabular} \\
 		\bottomrule[2pt]
 	\end{tabular}
 \end{table}
 
-我们对比原始用户问题和使用BPO、QAHF方法进行优化后的问题，得到结果如表\ref{query_compare_sota}所示。从表中可以看出，BPO方法没有考虑检索得到的知识文档信息，而直接对用户问题和模型回复进行分析和重写，因此重写后的问题局限于参考回答中的局部信息，而QAHF方法根据检索到的研报和新闻数据，分析出文档包含了该公司的市场份额相关信息，包括各项业务的增长情况、市场排名等，因此将原始用户问题中的表述扩展为“业务增长情况和市场排名”。
+本节对比原始用户问题和使用BPO、QAHF方法进行优化后的问题，得到结果如表\ref{query_compare_sota}所示。从表中可以看出，BPO方法没有考虑检索得到的知识文档信息，而直接对用户问题和模型回复进行分析和重写，因此重写后的问题局限于参考回答中的局部信息，而QAHF方法根据检索到的研报和新闻数据，分析出文档包含了该公司的市场份额相关信息，包括各项业务的增长情况、市场排名等，因此将原始用户问题中的表述扩展为“业务增长情况和市场排名”。
 
 \begin{table}
 	\caption{\label{response_compare_sota}使用不同对齐方法优化用户查询后得到的模型回复对比}
@@ -204,16 +206,18 @@ BPO\cite{DBLP:journals/corr/abs-2311-04155}：黑盒提示优化（Black-Box Pro
 		\toprule[2pt]
 		类型 & 回复 \\
 		\hline
-		原始 & \begin{tabular}{p{13.5cm}}
+		原始 & \begin{tabular}{p{12.5cm}}
 			抱歉，根据上述参考内容，我们无法得出关于招商证券2020年下半年市场份额的具体信息，因为该报告只提到了公司在2020年全年的业绩和排名情况，而没有涉及到下半年市场的份额变化。同时，该报告也没有提供关于个人知识答疑助手日期和招商证券2020年下半年市场份额的任何信息。
 		\end{tabular} \\
 		\hline
-		BPO & \begin{tabular}{p{13.5cm}}
+		BPO & \begin{tabular}{p{12.5cm}}
 			从提供的研报中可以得知,招商证券在2020年下半年表现出了良好的增长态势。具体来说,公司各项业务全面增长,其中经纪业务增速最高,实现营收67.2亿元,同比37.1\%;自营业务规模也有提升,营收同比增长10.1\%。公司在投资银行业务方面表现较为突出,投行业务收入同比增长18.4\%,但股权投资收益同比仅略微下降。此外,公司的代理买卖证券业务也有所提升,但两项业务的市场份额排名均有所下降。因此,可以预测,招商证券在2020年下半年将继续保持良好的增长势头,但需要关注市场波动和业务风险。
 		\end{tabular} \\
 		\hline
-		QAHF & \begin{tabular}{p{13.5cm}}
-			作为个人知识答疑助手，我认为招商证券2020年下半年市场份额如下： \\ 排名提升：在2020年上半年，招商证券的股票托管业务和股票经纪业务分别排名第6和第8位，但是在下半年，这两个业务的排名都提升了，分别排名第2和第3位。 \\ 市场份额上升：在2020年下半年，招商证券的代理业务同比增长了26\%，达到了2294.27亿元，占公司总代理业务收入的41.94\%，而2019年同期仅占2719.3亿元，占公司总代理业务收入的11.93\%。 \\ 头部地位稳固：在2020年下半年，招商证券的经纪业务、投行和资管业务分别排名第1、第7和第2位，而公司总代理业务排名第3位，这表明公司在行业中的地位稳固，继续保持头部地位。 \\ 因此，从2020年下半年招商证券的市场份额来看，在提升了代理业务的市场份额下，公司的经纪业务、投行和资管业务仍然保持了头部地位，并且在提高市场份额的同时，公司的代理业务同比增长了26\%。
+		\begin{tabular}{c}
+			QAHF \\ (本章 \\ 方法)
+		\end{tabular} & \begin{tabular}{p{12.5cm}}
+			作为知识答疑助手，我认为招商证券2020年下半年市场份额如下： \\ 排名提升：在2020年上半年，招商证券的股票托管业务和股票经纪业务分别排名第6和第8位，但是在下半年，这两个业务的排名都提升了，分别排名第2和第3位。 \\ 市场份额上升：在2020年下半年，招商证券的代理业务同比增长了26\%，达到了2294.27亿元，占公司总代理业务收入的41.94\%，而2019年同期仅占2719.3亿元，占公司总代理业务收入的11.93\%。 \\ 头部地位稳固：在2020年下半年，招商证券的经纪业务、投行和资管业务分别排名第1、第7和第2位，而公司总代理业务排名第3位，这表明公司在行业中的地位稳固，继续保持头部地位。 \\ 因此，从2020年下半年招商证券的市场份额来看，在提升了代理业务的市场份额下，公司经纪业务、投行和资管业务仍保持了头部地位，并且在提高市场份额的同时，公司的代理业务同比增长了26\%。
 		\end{tabular} \\
 		\bottomrule[2pt]
 	\end{tabular}
@@ -223,25 +227,42 @@ BPO\cite{DBLP:journals/corr/abs-2311-04155}：黑盒提示优化（Black-Box Pro
 
 \subsection{查询有效性验证模块的有效性}
 
-QAHF的一个重要组成部分是利用反馈来优化用户指令。为了研究反馈对QAHF的快速优化有多大贡献，进行了消融实验，以比较反馈学习优化(QAHF)和直接使用gpt-3.5-turbo进行快速优化。如表\ref{evaluation_pk}所示，直接优化可以提高模型性能，这验证了llm成为良好提示工程师的潜力。QAHF提供了超越直接优化的进一步改进。这表明，纳入反馈允许llm根据所展示的用户偏好来完善提示，从而实现更有效的提示优化。
+QAHF的一个重要组成部分是利用反馈来优化用户指令。为了研究反馈对QAHF的快速优化有多大贡献，进行了消融实验，以比较反馈学习优化(QAHF)和直接使用gpt-3.5-turbo进行快速优化。如表\ref{evaluation_pk_fiqa}和表\ref{evaluation_pk_alphafin}所示，直接优化可以提高模型性能，这验证了llm成为良好提示工程师的潜力。QAHF提供了超越直接优化的进一步改进。这表明，纳入反馈允许llm根据所展示的用户偏好来完善提示，从而实现更有效的提示优化。
 
 \begin{table}
-	\caption{\label{evaluation_pk}在偏好评价指标上查询有效性验证模块对性能的影响}
+	\caption{\label{evaluation_pk_fiqa}在FinGPT-FiQA数据集上探究查询有效性验证模块对性能的影响}
 	\centering
-	\begin{tabular}{lcc|ccc|ccc|c}
+	\begin{tabular}{lcc|ccc|c}
 		\toprule[2pt]
-		\multirow{2}*{模型} & \multicolumn{2}{c|}{方法} & \multicolumn{3}{c|}{FinGPT-FiQA Eval} & \multicolumn{3}{c|}{AlphaFin-test} & \multirow{2}*{$\Delta$ WR} \\
-		\cline{2-9}
-		~ & A & B & A win & Tie & B win & A win & Tie & B win & ~ \\
+		\multirow{2}*{模型} & \multicolumn{2}{c|}{方法} & \multicolumn{3}{c|}{FinGPT-FiQA Eval} & \multirow{2}*{$\Delta$ WR} \\
+		\cline{2-6}
+		~ & A & B & A win & Tie & B win & ~ \\
 		\hline
-		\multirow{3}*{ChatGLM} & Ours & ori. & 58.0\% & 21.0\% & 21.0\% & 61.0\% & 5.2\% & 33.8\% & +32.1\% \\
-		~ & w/o Eval & ori. & 49.8\% & 25.5\% & 24.7\% & 46.9\% & 30.6\% & 22.5\% & +24.8\% \\
-		~ & Ours & w/o Eval & 8.6\% & 86.3\% & 5.1\% & 15.1\% & 75.3\% & 9.6\% & +4.5\% \\
+		\multirow{3}*{ChatGLM} & QAHF & ori. & 58.0\% & 21.0\% & 21.0\% & +32.1\% \\
+		~ & w/o Eval & ori. & 49.8\% & 25.5\% & 24.7\% & +24.8\% \\
+		~ & QAHF & w/o Eval & 8.6\% & 86.3\% & 5.1\% & +4.5\% \\
 		\bottomrule[2pt]
 	\end{tabular}
 \end{table}
 
-本节基于ragas评估框架对完整的QAHF方法和去除提示词有效性验证模块后的QAHF方法进行性能比较，实验结果如表\ref{evaluation_ragas}所示。从表中结果可以看出，去除提示词有效性验证模块后，数据中噪声偏多，因此模型在context\_precision和faithfulness指标上都仅有0.03和0.02的微弱提升，甚至在context\_recall上有0.01的降低。而增加提示词有效性验证模块后，模型在context\_precision和faithfulness指标上有了显著提升，分别提升了0.11和0.06分，而在context\_recall指标上，与原始结果几乎相同，仅相差0.001。对于context\_recall指标上分数的降低，我们推测是因为问题改写仅影响模型回复与用户问题之间的相关性，而context\_recall评估的是用户问题和知识文档之间的相似性，因此在这一指标上，所对比的三种方法得分相近。
+
+\begin{table}
+	\caption{\label{evaluation_pk_alphafin}在AlphaFin-test数据集上探究查询有效性验证模块对性能的影响}
+	\centering
+	\begin{tabular}{lcc|ccc|c}
+		\toprule[2pt]
+		\multirow{2}*{模型} & \multicolumn{2}{c|}{方法} & \multicolumn{3}{c|}{AlphaFin-test} & \multirow{2}*{$\Delta$ WR} \\
+		\cline{2-6}
+		~ & A & B & A win & Tie & B win & ~ \\
+		\hline
+		\multirow{3}*{ChatGLM} & QAHF & ori. & 61.0\% & 5.2\% & 33.8\% & +32.1\% \\
+		~ & w/o Eval & ori. & 46.9\% & 30.6\% & 22.5\% & +24.8\% \\
+		~ & QAHF & w/o Eval & 15.1\% & 75.3\% & 9.6\% & +4.5\% \\
+		\bottomrule[2pt]
+	\end{tabular}
+\end{table}
+
+本节基于ragas评估框架对完整的QAHF方法和去除提示词有效性验证模块后的QAHF方法进行性能比较，实验结果如表\ref{evaluation_ragas}所示。从表中结果可以看出，去除提示词有效性验证模块后，数据中噪声偏多，因此模型在context\_precision和faithfulness指标上都仅有0.03和0.02的微弱提升，甚至在context\_recall上有0.01的降低。而增加提示词有效性验证模块后，模型在context\_precision和faithfulness指标上有了显著提升，分别提升了0.11和0.06分，而在context\_recall指标上，与原始结果几乎相同，仅相差0.001。对于context\_recall指标上分数的降低，可能是因为问题改写仅影响模型回复与用户问题之间的相关性，而context\_recall评估的是用户问题和知识文档之间的相似性，因此在这一指标上，所对比的三种方法得分相近。
 
 \begin{table}
 	\caption{\label{evaluation_ragas}在Ragas指标上查询有效性验证模块对性能的影响}
@@ -252,7 +273,7 @@ QAHF的一个重要组成部分是利用反馈来优化用户指令。为了研�
 		\hline
 		\multirow{3}*{ChatGLM} & ori. & 0.6717 & 0.8430 & 0.8005 \\
 		~ & w/o Eval & 0.7023(+0.03) & 0.8329(-0.01) & 0.8216(+0.02) \\
-		~ & Ours & 0.7839(+0.11) & 0.8417(-0.001) & 0.8574(+0.06) \\
+		~ & QAHF & 0.7839(+0.11) & 0.8417(-0.001) & 0.8574(+0.06) \\
 		\bottomrule[2pt]
 	\end{tabular}
 \end{table}
@@ -295,12 +316,12 @@ QAHF的一个重要组成部分是利用反馈来优化用户指令。为了研�
 
 \subsection{迭代优化对算法性能的影响}
 
-由于QAHF可以优化用户提示以获得更好的响应，自然的想法是我们是否可以迭代优化问题，逐步增强LLM的输出。因此，本节用gpt-3.5-turbo在AlphaFin-test数据集上进行了实验。具体来说，我们对原始指令进行了5次迭代优化，并与原始指令进行了ragas指标比较。如图\ref{multi_iter_optimize_ragas_exp}所示，通过3次迭代，有明显的改善，在第4次迭代时略有下降。此外，我们还发现BPO表现出良好的保留性，当输入提示已经足够好时，它有很高的概率保留它。我们认为这是实现迭代增强的关键因素，因为它避免了对用户的原始意图进行不合理的更改。多次执行CoT分析与优化问题生成。
+由于QAHF可以优化用户提示以获得更好的响应，自然的想法是是否可以迭代优化问题，逐步增强LLM的输出。因此，本节用gpt-3.5-turbo在AlphaFin-test数据集上进行了实验。具体来说，本节对原始指令进行了5次迭代优化，并与原始指令进行了ragas指标比较。如图\ref{multi_iter_optimize_ragas_exp}所示，通过3次迭代，有明显的改善，在第4次迭代时略有下降。此外，本节还发现QAHF表现出良好的保留性，当输入提示已经足够好时，它有很高的概率保留它。本节认为这是实现迭代增强的关键因素，因为它避免了对用户的原始意图进行不合理的更改。多次执行CoT分析与优化问题生成。
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[scale=0.45]{Fig/multi_iter_optimize_ragas_exp.png}
-	\caption{\label{multi_iter_optimize_ragas_exp}经过不同迭代优化次数的ragas precision变化示意图。}
+	\includegraphics[scale=0.5]{Fig/multi_iter_optimize_ragas_exp.png}
+	\caption{\label{multi_iter_optimize_ragas_exp}经过不同迭代优化次数的Ragas Precision变化示意图。}
 \end{figure}
 
 \subsection{人类反馈对算法性能的影响}
@@ -316,9 +337,9 @@ QAHF的一个重要组成部分是利用反馈来优化用户指令。为了研�
 		\cline{2-6}
 		~ & A & B & A win & Tie & B win & ~ \\
 		\hline
-		\multirow{3}*{ChatGLM} & Ours & ori. & 61.0\% & 5.2\% & 33.8\% & +27.2\% \\
+		\multirow{3}*{ChatGLM} & QAHF & ori. & 61.0\% & 5.2\% & 33.8\% & +27.2\% \\
 		~ & w/o Human & ori. & 39.4\% & 35.8\% & 24.8\% & +14.6\% \\
-		~ & Ours & w/o Human & 45.7\% & 20.3\% & 34.0\% & +11.7\% \\
+		~ & QAHF & w/o Human & 45.7\% & 20.3\% & 34.0\% & +11.7\% \\
 		\bottomrule[2pt]
 	\end{tabular}
 \end{table}
