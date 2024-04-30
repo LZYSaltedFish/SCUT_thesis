@@ -25,7 +25,7 @@
 
 \section{本章方法}
 
-\section{算法总体方案}
+\subsection{算法总体方案}
 
 \begin{figure}[htbp]
 	\centering
@@ -35,13 +35,63 @@
 
 本章研究一种基于人类偏好对齐的检索增强对话生成的方法，该任务通常需要收集对话模型在各类真实场景下的对话，然后由人类完成偏好标注，最后通过PPO强化算法或其他算法训练对话模型，以达到偏好对齐的目的。而PPO强化学习在大型语言模型上非常具有挑战性，训练效果稳定性低。因此，本章提出基于人类反馈的问题对齐（Query Alignment with Human Feedback, QAHF），基于人类偏好反馈数据训练一个单独的问题优化器，避免直接训练对话模型，从而实现与模型无关的、非侵入的的人类偏好对齐。如图\ref{qahf_framework}所示，QAHF方法主要包括四个阶段：1）人类偏好数据采集阶段；2）优化问题构建阶段；3）问题有效性验证阶段；4）问题优化器训练阶段。
 
+\renewcommand{\algorithmcfname}{算法}
+\begin{algorithm}
+	\caption{基于人类偏好对齐的检索增强对话生成算法} %算法的名字
+	% {\bf Input:} %算法的输入， \hspace*{0.02in}用来控制位置，同时利用 \\ 进行换行
+	% Network and energy parameters $V^{vec},V^{c},\zeta^c,\zeta^{vec}$ etc; convergence tolerance $\epsilon$; iteration $\tau=1$ \\
+	%	\hspace*{0.02in} {\bf Output:} %算法的结果输出
+	
+	\begin{algorithmic}[1]
+		\STATE {\bf 输入：} %算法的输入， \hspace*{0.02in}用来控制位置，同时利用 \\ 进行换行
+		用户问题集合$Q$，知识文档块集合$D$，对话模型$M$，问题优化器$\pi_\theta$.
+		% \STATE {\bf Output:} $P_n^*,f_n^*,a_n^*$ %算法的结果输出
+		\STATE {\bf for} q {\bf in} Q {\bf do}
+		\STATE \qquad 从$D$中检索与$q$相关性Top-3的知识文档$\{d_1, d_2, d_3\}$
+		\STATE \qquad 将$q$与$\{d_1, d_2, d_3\}$输入$M$，基于随机采样收集回答组$\{r_1, r_2, ...\}$
+		\STATE \qquad 通过回答质量评测标准对$r_j$计算偏好一致性$c_j$
+		\STATE \qquad 选择偏好一致性分数最高和最低的回答$r_{good}$和$r_{bad}$
+		\STATE {\bf end for}
+		\STATE {\bf for} 偏序数据对 i = 1, ..., N {\bf do}
+		\STATE \qquad 通过模型$M$获取偏好特征思维链分析$A$
+		\STATE \qquad 结合思维链分析$A$，获取优化后的检索问题$q^i_{search}$和优化后的用户问题$q^i_{qa}$
+		\STATE \qquad 从$D$中检索与$q^i_{search}$相关性Top-3的知识文档$\{d^i_1, d^i_2, d^i_3\}$
+		\STATE \qquad 将$q^i_{qa}$与$\{d^i_1, d^i_2, d^i_3\}$输入$M$，收集回答$r_i$
+		\STATE \qquad 通过模型$M$计算优化问题有效性$c_i$
+		\STATE \qquad {\bf if} $c_i > threshold$ {\bf do}
+		\STATE \qquad \qquad 将$c_i$加入优化问题数据集$O$
+		\STATE {\bf end for}
+		\STATE 使用预训练模型参数初始化问题优化器的网络参数$\theta$
+		\STATE {\bf while} 不收敛 {\bf do}
+		\STATE \qquad 从优化问题数据集$O$中均匀采样三元组样本
+		\STATE \qquad 通过公式（4-1）得到样本输出
+		\STATE \qquad 通过AdamW优化算法更新$\theta$
+		\STATE {\bf end while}
+		% \STATE Initialize variable: $\forall a_n\in \mathbb{V}$, set $a_n=1$.
+		% \STATE Obtain $P_n^*,f_n^*$ by solving $P2$ without considering $(C1)$.
+		% \STATE Check $(C1)$ has been satisfied or not.
+		% \STATE {\bf If} $(C1)$ has been satisfied:
+		% \STATE \qquad put $P_n^*,f_n^*$ into $P3$
+		% \STATE \qquad Obtain $a_n^*$ by solving $P3$.
+		% \STATE \qquad \Return $P_n^*,f_n^*,a_n^*$.
+		% \STATE {\bf Else}: 
+        % \STATE \qquad Traversing all vehicles, find $n=\arg max(q_n)$
+        % \STATE \qquad $K_n=K_n-\mathbb{K}$
+        % \STATE \qquad Jump to the step 5
+	\end{algorithmic}
+\end{algorithm}
+
 \subsection{人类偏好数据采集阶段}
 
-为了建模人类偏好，本节首先搜集了一系列垂直领域问答数据集，该数据集样本为“问题-回答”对，问题主题为垂直领域相关专业问题。此外，本章使用基于规则的方法，过滤掉数据集中与该领域无关、样本长度过短、话题范围过窄的低质量样本，以保证样本的用户问题存在优化空间。然后，在向量数据库中检索与用户问题相关的文档块，并将结果输入LLM，通过随机采样的生成策略，得到LLM的多组回答。最后，通过人工标注的方式，从准确性、有帮助性、全面性等方面对LLM回答进行偏序关系标注，从每组回答中选出综合评分更高的回答作为“好回答”，评分最低的回答作为“差回答”，得到人类偏好反馈数据集。本章主要关注单轮对话的对话生成。
+为了建模人类偏好，本节首先搜集了一系列垂直领域问答数据集，该数据集样本为“问题-回答”对，问答主题为垂直领域相关专业问题。此外，本章使用基于规则的方法，过滤掉数据集中的低质量样本，以保证样本的用户问题存在优化空间，具体做法是：1）先过滤筛除输入、输出长度低于10个标识符的过短样本；2）然后基于百科词条与开源数据集构建垂直领域专有名词词汇表，筛除样本中不包含专有名词的领域无关样本。本章主要关注单轮对话的对话生成。
+
+然后，在向量数据库中检索与用户问题相关的文档块，并将结果输入LLM，通过随机采样的生成策略，得到LLM的多组回答。最后，通过人工标注的方式，根据回答质量评判标准对LLM回答进行偏序关系标注，从每组回答中选出综合评分更高的回答作为“好回答”，评分最低的回答作为“差回答”，得到人类偏好反馈数据集。其中，回答质量评判标准包含5个维度，即准确性、完整性、逻辑性、表达能力和有效建议，每个维度的评分取值范围为0、1、2分，分别表示“不符合预期”、“不太符合预期”和“较为符合预期”，最终通过加权平均计算得到样本的偏好一致性评分$C$。
+\begin{equation}
+	C = \frac{1}{5}\sum_{i=1}^{5}c_i
+\end{equation}
+其中，$c_i$分别表示不同维度的评分。
 
 \subsection{优化问题构建阶段}
-
-随后，本节使用LLM来对数据集中的原始用户问题进行优化。本节使用基于CoT的提示工程方法，引导LLM通过人类偏好反馈数据识别出用户偏好特征，分析造成LLM生成差回答的原因以及好回答中蕴含的人类偏好特征。接着，分别针对数据库检索和LLM对话场景各自生成一个优化后的用户问题，使得在新的用户问题下，检索增强对话系统生成的回答分布更趋近于好回答分布，区别于差回答的分布。本节所使用的问题优化提示词如表\ref{query_optimize_prompt}所示。
 
 \begin{table}
 	\caption{\label{query_optimize_prompt}问题优化提示词格式。}
@@ -58,10 +108,9 @@
 	\end{tabular}
 \end{table}
 
-\subsection{问题有效性验证阶段}
+随后，本节使用LLM来对数据集中的原始用户问题进行优化。本节使用基于CoT的提示工程方法，引导LLM通过人类偏好反馈数据识别出用户偏好特征，分析造成LLM生成差回答的原因以及好回答中蕴含的人类偏好特征。接着，分别针对数据库检索和LLM对话场景各自生成一个优化后的用户问题，使得在新的用户问题下，检索增强对话系统生成的回答分布更趋近于好回答分布，区别于差回答的分布。相较于直接进行用户问题优化，使用CoT生成人类偏好原因分析能够为用户问题优化任务补充流畅而符合逻辑的上下文，对复杂问题的理解产生增益。本节所使用的问题优化提示词如表\ref{query_optimize_prompt}所示。
 
-LLM生成的问题可能仍然存在理解偏差问题，若直接使用带噪声的数据进行后续训练，可能加重模型理解偏差，损害模型性能。因此，本节将优化后的问题重新输入系统，得到新的模型回复，并利用大型语言模型的反思能力，对新回复的质量进行评判，以筛选出有效的偏好数据样本，提高数据集信噪比。并得到最终的优化问题三元组数据集。其中，本阶段所使用的问题有效性验证提示词如表\ref{query_validation_prompt}所示。
-% TODO：包含三步骤...
+\subsection{问题有效性验证阶段}
 
 \begin{table}
 	\caption{\label{query_validation_prompt}问题有效性验证提示词格式。}
@@ -78,6 +127,9 @@ LLM生成的问题可能仍然存在理解偏差问题，若直接使用带噪�
 	\end{tabular}
 \end{table}
 
+LLM生成的问题可能仍然存在理解偏差问题，若直接使用带噪声的数据进行后续训练，可能加重模型理解偏差，损害模型性能。因此，本节将优化后的问题重新输入系统，得到新的模型回复，并利用大型语言模型的反思能力，对新回复的质量进行评判，以筛选出有效的偏好数据样本，提高数据集信噪比。并得到最终的优化问题三元组数据集。其中，本阶段所使用的问题有效性验证提示词如表\ref{query_validation_prompt}所示，有效性验证过程包含三个步骤：1）计算知识文档与用户问题的相关性，即验证优化后的问题是否与知识文档的语义空间完成对齐；2）计算模型回答的正确性，即验证优化后的问题与对话模型是否完成对齐；3）根据上述相关性和正确性结果，给出最终的问题优化有效性评分，取值范围为[1, 10]。
+% TODO：包含三步骤...
+
 \subsection{问题优化器训练阶段}
 
 基于前述步骤所构建的人类偏好数据集，训练一个Seq2Seq\cite{DBLP:journals/corr/abs-2309-16609}模型作为问题优化器，实现模型无关的、可插拔的用户问题自动优化。形式上，给定原始用户问题$Q_{ori}$，优化器生成优化后的用户问题$Q_{opt}$：
@@ -88,7 +140,7 @@ LLM生成的问题可能仍然存在理解偏差问题，若直接使用带噪�
 
 本节使用交叉熵损失函数作为训练目标，损失函数定义为:
 \begin{equation}
-	L=-\frac{1}{N} \sum_{t=1}^N \log P\left(x_t \mid Q_{\text{ori}}, x_{<t}\right)
+	\mathcal{L}=-\frac{1}{N} \sum_{t=1}^N \log P\left(x_t \mid Q_{\text{ori}}, x_{<t}\right)
 \end{equation}
 其中，$N$是$Q_{opt}$的长度，$x_t$表示$Q_{opt}$中的第$t$个标识符。本章选择Qwen-7B作为基座模型，以更好地学习$Q_{ori}$和$Q_{opt}$之间的隐式偏好映射。同时，在目前的主流LLM中，7B模型的参数量相对较小，能够以更低的成本进行训练和推理，具有更低的推理延迟，作为本方法中的问题优化器具有一定优势。
 

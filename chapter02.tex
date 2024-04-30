@@ -128,11 +128,24 @@ Cui等人\cite{DBLP:journals/corr/abs-2306-16092}提出ChatLaw中文法律大模
 
 \subsection{基于模型微调的对话生成}
 
-Wei等人\cite{DBLP:conf/iclr/WeiBZGYLDDL22}提出指令微调（Instruction Tuning）方法，通过监督训练，让语言模型学会按照指令要求完成任务，从而具备遵循指令的能力，即使面对训练中未曾见过的任务，模型也能够生成合适的回复。
+根据研究目标的不同，基于模型微调的方法主要可分为两类：（1）参数高效的微调方法；（2）人类偏好对齐的微调方法。
+
+Houlsby等人\cite{DBLP:conf/icml/HoulsbyGJMLGAG19}提出适配器微调（Adapter-Tuning）方法，在Tranformer层中插入小规模的神经网络模块，并在训练过程中冻结模型原有参数，仅更新这些适配器模块，实现与全量微调相近的性能。
+Mahabadi等人\cite{DBLP:conf/nips/MahabadiHR21}提出Compacter方法，通过结合超复数乘法和参数共享，将模型原有的线性层视为两个小矩阵的Kronecker积，实现在不损害模型性能的情况下显著减少适配器参数量。
+Pfeiffer等人\cite{DBLP:conf/eacl/PfeifferKRCG21}提出AdapterFusion方法，先分别训练任务特定的适配器，再将不同任务的适配器融合起来，以利用跨任务知识来提升迁移学习的性能。
+除了在Transformer模型内部引入额外的神经网络模块外，也有研究人员在模型输入中引入额外的可训练上下文，实现参数高效微调。
 Li等人\cite{DBLP:conf/acl/LiL20}提出Prefix-Tuning方法，在模型输入首端增加一个连续的、任务相关的嵌入向量来进行训练，在显著减少训练参数量的情况下提升模型在自然语言生成任务上的性能。
-与Prefix-Tuning思想相似，Brian等人\cite{lester-etal-2021-power}提出提示学习（Prompt Tuning）方法，通过在输入中插入一段任务特定的、可被训练的离散提示词元，获得了与微调相近的效果，同时超过了人工设计提示词的性能。
+% 与Prefix-Tuning思想相似，Brian等人\cite{lester-etal-2021-power}提出提示学习（Prompt Tuning）方法，通过在输入中插入一段任务特定的、可被训练的离散提示词元，获得了与微调相近的效果，同时超过了人工设计提示词的性能。
 Liu等人\cite{DBLP:journals/corr/abs-2110-07602}在Prefix-Tuning的基础上，进一步提出P-Tuning v2方法，在模型的每一层上都加上了可训练的层级提示词元，且对于不同难度的任务使用不同的提示长度。
-Hu等人\cite{DBLP:conf/iclr/HuSWALWWC22}提出了低秩自适应（Low-Rank Adaptation，LoRA）方法，通过使用低维结构来近似大模型的高维结构，以降低模型训练的复杂度和计算开销。总体来说，基于监督数据微调的方法性能优于基于提示词工程的方法，但存在高质量标注数据难获取的问题。
+Gu等人\cite{DBLP:conf/acl/GuHLH22}提出PPT方法，在模型与训练阶段插入软提示，以寻找更合适的参数初始化起点。
+Lee等人\cite{DBLP:journals/corr/abs-1911-03090}仅微调BERT和RoBERTa模型最后四分之一的中间层，冻结模型其他参数，达到了全量微调方法90\%的性能。
+Zaken等人\cite{DBLP:conf/acl/ZakenGR22}提出BitFit方法，仅对模型中的bias参数进行优化更新，并通过实验证明该方法在多个评测集上能够达到超过95\%的性能。
+除了通过人工指定的方式确定需要更新的模型参数子集外，Zhao等人\cite{DBLP:conf/emnlp/ZhaoLMJS20}提出基于二维矩阵的掩码方法，通过学习掩码，自动选择需要更新的关键参数。
+Aghajanyan等人\cite{DBLP:conf/acl/AghajanyanGZ20}通过实验发现，模型全参数微调的过程可以被重新参数化为一个低维子空间的优化过程。
+Li等人\cite{DBLP:conf/iclr/LiFLY18}提出内在维度（intrinsic dimension）概念，用于衡量使模型达到预期性能所需要更新的最小参数量，并通过实验证明较低的内在维度重新参数化即可达到全量微调超过85\%的性能，同时发现内在维度随模型尺寸增大而减小，且模型预训练过程能够隐式减小其内在维度。
+Hu等人\cite{DBLP:conf/iclr/HuSWALWWC22}提出了低秩自适应（Low-Rank Adaptation，LoRA）方法，通过使用低维结构来近似大模型的高维结构，以降低模型训练的复杂度和计算开销。
+Qiu等人\cite{DBLP:journals/corr/abs-2110-07867}进一步提出假设，认为多任务自适应存在一个通用的内在空间，因此能够将多任务学习过程重新参数化为一个低维内在子空间的优化过程。
+总体来说，基于监督数据微调的方法性能优于基于提示词工程的方法，但存在高质量标注数据难获取的问题。
 
 Long等人\cite{DBLP:conf/nips/Ouyang0JAWMZASR22}提出基于人类反馈的强化学习（Reinforcement Learning with Human Feedback，RLHF）算法，其工作过程包括采集高质量数据集对语言模型监督微调（SFT）、收集人类偏好排名数据集并训练奖励模型（RM）、执行近端策略优化（Proximal Policy Optimization，PPO）强化学习。
 该算法能够很好地帮助模型生成符合人类偏好的回复，同时减少生成式模型中的偏见。然而，RLHF算法在PPO强化学习训练阶段需要同时使用四个大型语言模型，导致训练计算资源开销大，同时PPO强化学习过程不稳定，导致模型难以训练。为此，许多研究者提出其他的人类偏好对齐算法替代RLHF算法。
@@ -145,6 +158,7 @@ Rafailov等人\cite{DBLP:conf/nips/RafailovSMMEF23}提出DPO算法，其思想�
 Liu等人\cite{DBLP:journals/corr/abs-2309-06657}提出RSO算法，使用拒绝采样得到高质量回答的分布。
 上述方法依赖于人类反馈数据，标注成本高昂。为解决该问题，Bai等人\cite{DBLP:journals/corr/abs-2212-08073}提出RLAIF方法，用宪法人工智能（CAI）代替人类进行偏好的标记工作，实验表明RLAIF能够达到与RLHF相当的性能。
 此外，Li等人\cite{DBLP:journals/corr/abs-2310-10505}提出ReMax算法，通过削减PPO中冗余庞大的计算开销，节省RLHF算法50\%的内存消耗，并加快2倍训练速度。现有方法一方面需要高昂的人力成本完成偏好数据标注，另一方面存在训练计算资源开销大、难训练的问题。
+Wei等人\cite{DBLP:conf/iclr/WeiBZGYLDDL22}提出指令微调（Instruction Tuning）方法，通过监督训练，让语言模型学会按照指令要求完成任务，从而具备遵循指令的能力，即使面对训练中未曾见过的任务，模型也能够生成合适的回复。
 
 总结：模型微调方法通过调整模型内部参数，能够控制模型内在的行为模式，对齐人类偏好，但是对动态数据缺乏实时性，难以及时跟进垂直领域的新知识。
 
