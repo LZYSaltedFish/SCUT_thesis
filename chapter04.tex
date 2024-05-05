@@ -25,7 +25,7 @@
 
 \section{本章方法}
 
-\subsection{算法总体方案}
+\subsection{方法总体方案}
 
 \begin{figure}[htbp]
 	\centering
@@ -33,11 +33,74 @@
 	\caption{\label{qahf_framework}基于人类偏好对齐的检索增强对话生成框架图。}
 \end{figure}
 
-本章研究一种基于人类偏好对齐的检索增强对话生成的方法，该任务通常需要收集对话模型在各类真实场景下的对话，然后由人类完成偏好标注，最后通过PPO强化算法或其他算法训练对话模型，以达到偏好对齐的目的。而PPO强化学习在大型语言模型上非常具有挑战性，训练效果稳定性低。因此，本章提出基于人类反馈的问题对齐（Query Alignment with Human Feedback, QAHF），基于人类偏好反馈数据训练一个单独的问题优化器，避免直接训练对话模型，从而实现与模型无关的、非侵入的的人类偏好对齐。如图\ref{qahf_framework}所示，QAHF方法主要包括四个阶段：1）人类偏好数据采集阶段；2）优化问题构建阶段；3）问题有效性验证阶段；4）问题优化器训练阶段。
+本章研究一种基于人类偏好对齐的检索增强对话生成的方法，该任务通常需要收集对话模型在各类真实场景下的对话，然后由人类完成偏好标注，最后通过PPO强化算法或其他算法训练对话模型，以达到偏好对齐的目的。而PPO强化学习在大型语言模型上非常具有挑战性，训练效果稳定性低。因此，本章提出基于人类反馈的问题对齐（Query Alignment with Human Feedback, QAHF），基于人类偏好反馈数据训练一个单独的问题优化器，避免直接训练对话模型，从而实现与模型无关的、非侵入的人类偏好对齐。如图\ref{qahf_framework}所示，QAHF方法主要包括四个阶段：1）人类偏好数据采集阶段；2）优化问题构建阶段；3）问题有效性验证阶段；4）问题优化器训练阶段。
+
+\subsection{人类偏好数据采集阶段}
+
+为了建模人类偏好，本节首先搜集了一系列垂直领域问答数据集，该数据集样本为“问题-回答”对，问答主题为垂直领域相关专业问题。此外，本章使用基于规则的方法，过滤掉数据集中的低质量样本，以保证样本的用户问题存在优化空间，具体做法是：1）先过滤筛除输入、输出长度低于10个标识符的过短样本；2）然后基于百科词条与开源数据集构建垂直领域专有名词词汇表，筛除样本中不包含专有名词的领域无关样本。本章主要关注单轮对话的对话生成。
+
+然后，在向量数据库中检索与用户问题相关的文档块，并将结果输入LLM，通过随机采样的生成策略，得到LLM的多组回答。最后，通过人工标注的方式，根据回答质量评判标准对LLM回答进行偏序关系标注，从每组回答中选出综合评分更高的回答作为“好回答”，评分最低的回答作为“差回答”，得到人类偏好反馈数据集。其中，回答质量评判标准包含5个维度，即准确性、完整性、逻辑性、表达能力和有效建议，每个维度的评分取值范围为0、1、2分，分别表示“不符合预期”、“不太符合预期”和“较为符合预期”，最终通过加权平均计算得到样本的偏好一致性评分$C$。
+\begin{equation}
+	C = \frac{1}{5}\sum_{i=1}^{5}c_i
+\end{equation}
+其中，$c_i$分别表示不同维度的评分。
+
+\begin{table}
+	\caption{\label{query_optimize_prompt}问题优化提示词格式。}
+	\centering{}%
+	\small 
+	\begin{tabular}{c}
+		\toprule[2pt]
+		问题优化提示词\tabularnewline
+		\hline 
+		\begin{tabular}{p{15cm}}
+			\# SYSTEM\\你是一个大语言模型Prompt工程专家，你将根据我提供的信息完成我指定的任务。其中，QUERY表示用户输入的问题，DOCS是在数据库中检索得到的与QUERY相关的知识文档，GOOD RESPONSE是相比于BAD RESPONSE更符合人类偏好的LLM回复。 \\ \# QUERY \\ 作为个人知识答疑助手，请根据上述参考内容回答下面问题，答案中不允许包含编造内容。 \\ 问题是：<original query> \\ \# DOCS \\ <docs> \\ \# GOOD RESPONSE \\ <good response> \\ \# BAD RESPONSE \\ <bad response> \\ \# TASK \\ 你的任务是： \\ 1. 判断检索到的DOCS是否与QUERY相关，以及DOCS中的信息是否能够回答QUERY中的问题； \\ 2. 从事实性、完整性、逻辑性三个方面对比GOOD RESPONSE和BAD RESPONSE，分析可能导致LLM给出BAD RESPONSE的原因； \\ 3. 若DOCS与QUERY相关性不高，重写一个新的Query，用于数据库检索，使得检索到的DOCS的相关性更高，否则不需要重写； \\ 4. 作为专业的Prompt工程师，再重写一个新的QUERY，用于输入LLM，使得LLM更有可能给出GOOD RESPONSE。
+		\end{tabular} \\
+		\bottomrule[2pt]
+	\end{tabular}
+\end{table}
+
+\subsection{优化问题构建阶段}
+
+随后，本节使用LLM来对数据集中的原始用户问题进行优化。本节使用基于CoT的提示工程方法，引导LLM通过人类偏好反馈数据识别出用户偏好特征，分析造成LLM生成差回答的原因以及好回答中蕴含的人类偏好特征。接着，分别针对数据库检索和LLM对话场景各自生成一个优化后的用户问题，使得在新的用户问题下，检索增强对话系统生成的回答分布更趋近于好回答分布，区别于差回答的分布。相较于直接进行用户问题优化，使用CoT生成人类偏好原因分析能够为用户问题优化任务补充流畅而符合逻辑的上下文，对复杂问题的理解产生增益。本节所使用的问题优化提示词如表\ref{query_optimize_prompt}所示。
+
+\begin{table}
+	\caption{\label{query_validation_prompt}问题有效性验证提示词格式。}
+	\centering{}%
+	\small 
+	\begin{tabular}{c}
+		\toprule[2pt]
+		有效性验证提示词\tabularnewline
+		\hline 
+		\begin{tabular}{p{15cm}}
+			\#SYSTEM \\ 你是一个大语言模型Prompt工程专家，你将根据我提供的信息完成我指定的任务。其中，QUERY表示用户输入的问题，DOCS是在数据库中检索得到的与QUERY相关的知识文档，RESPONSE是LLM的回复。 \\ \# QUERY \\ 作为个人知识答疑助手，请根据上述参考内容回答下面问题，答案中不允许包含编造内容。 \\ 问题是：<original query> \\ \# DOCS \\ <docs> \\ \# RESPONSE \\ < response> \\ \# TASK \\ 你的任务是： \\ 1. 判断检索到的DOCS是否与QUERY相关，以及DOCS中的信息是否能够回答QUERY中的问题； \\ 2. 判断RESPONSE是否能够准确、可靠地回答QUERY； \\ 3. 对RESPONSE进行评分，分数取值范围为[1, 10]。 \\ 
+		\end{tabular} \\
+		\bottomrule[2pt]
+	\end{tabular}
+\end{table}
+
+\subsection{问题有效性验证阶段}
+
+LLM生成的问题可能仍然存在理解偏差问题，若直接使用带噪声的数据进行后续训练，可能加重模型理解偏差，损害模型性能。因此，本节将优化后的问题重新输入系统，得到新的模型回复，并利用大型语言模型的反思能力，对新回复的质量进行评判，以筛选出有效的偏好数据样本，提高数据集信噪比。并得到最终的优化问题三元组数据集。其中，本阶段所使用的问题有效性验证提示词如表\ref{query_validation_prompt}所示，有效性验证过程包含三个步骤：1）计算知识文档与用户问题的相关性，即验证优化后的问题是否与知识文档的语义空间完成对齐；2）计算模型回答的正确性，即验证优化后的问题与对话模型是否完成对齐；3）根据上述相关性和正确性结果，给出最终的问题优化有效性评分，取值范围为[1, 10]。
+% TODO：包含三步骤...
+
+\subsection{问题优化器训练阶段}
+
+基于前述步骤所构建的人类偏好数据集，训练一个Seq2Seq\cite{DBLP:journals/corr/abs-2309-16609}模型作为问题优化器，实现模型无关的、可插拔的用户问题自动优化。形式上，给定原始用户问题$Q_{ori}$，优化器生成优化后的用户问题$Q_{opt}$：
+\begin{equation}
+	Q_{opt} = [Q_{search}, [SEP], Q_{qa}]
+\end{equation}
+其中，$Q_{search}$表示用于数据库检索的问题，$Q_{qa}$表示用于回答生成的问题，$[SEP]$为特殊标识符，用于分隔$Q_{search}$和$Q_{qa}$。
+
+本节使用交叉熵损失函数作为训练目标，损失函数定义为:
+\begin{equation}
+	\mathcal{L}=-\frac{1}{N} \sum_{t=1}^N \log P\left(x_t \mid Q_{\text{ori}}, x_{<t}\right)
+\end{equation}
+其中，$N$是$Q_{opt}$的长度，$x_t$表示$Q_{opt}$中的第$t$个标识符。本章选择Qwen-7B作为基座模型，以更好地学习$Q_{ori}$和$Q_{opt}$之间的隐式偏好映射。同时，在目前的主流LLM中，7B模型的参数量相对较小，能够以更低的成本进行训练和推理，具有更低的推理延迟，作为本方法中的问题优化器具有一定优势。
 
 \renewcommand{\algorithmcfname}{算法}
 \begin{algorithm}
-	\caption{基于人类偏好对齐的检索增强对话生成算法} %算法的名字
+	\caption{基于人类偏好对齐的检索增强对话生成方法} %算法的名字
 	% {\bf Input:} %算法的输入， \hspace*{0.02in}用来控制位置，同时利用 \\ 进行换行
 	% Network and energy parameters $V^{vec},V^{c},\zeta^c,\zeta^{vec}$ etc; convergence tolerance $\epsilon$; iteration $\tau=1$ \\
 	%	\hspace*{0.02in} {\bf Output:} %算法的结果输出
@@ -80,69 +143,6 @@
         % \STATE \qquad Jump to the step 5
 	\end{algorithmic}
 \end{algorithm}
-
-\subsection{人类偏好数据采集阶段}
-
-为了建模人类偏好，本节首先搜集了一系列垂直领域问答数据集，该数据集样本为“问题-回答”对，问答主题为垂直领域相关专业问题。此外，本章使用基于规则的方法，过滤掉数据集中的低质量样本，以保证样本的用户问题存在优化空间，具体做法是：1）先过滤筛除输入、输出长度低于10个标识符的过短样本；2）然后基于百科词条与开源数据集构建垂直领域专有名词词汇表，筛除样本中不包含专有名词的领域无关样本。本章主要关注单轮对话的对话生成。
-
-然后，在向量数据库中检索与用户问题相关的文档块，并将结果输入LLM，通过随机采样的生成策略，得到LLM的多组回答。最后，通过人工标注的方式，根据回答质量评判标准对LLM回答进行偏序关系标注，从每组回答中选出综合评分更高的回答作为“好回答”，评分最低的回答作为“差回答”，得到人类偏好反馈数据集。其中，回答质量评判标准包含5个维度，即准确性、完整性、逻辑性、表达能力和有效建议，每个维度的评分取值范围为0、1、2分，分别表示“不符合预期”、“不太符合预期”和“较为符合预期”，最终通过加权平均计算得到样本的偏好一致性评分$C$。
-\begin{equation}
-	C = \frac{1}{5}\sum_{i=1}^{5}c_i
-\end{equation}
-其中，$c_i$分别表示不同维度的评分。
-
-\subsection{优化问题构建阶段}
-
-\begin{table}
-	\caption{\label{query_optimize_prompt}问题优化提示词格式。}
-	\centering{}%
-	\small 
-	\begin{tabular}{c}
-		\toprule[2pt]
-		问题优化提示词\tabularnewline
-		\hline 
-		\begin{tabular}{p{15cm}}
-			\# SYSTEM\\你是一个大语言模型Prompt工程专家，你将根据我提供的信息完成我指定的任务。其中，QUERY表示用户输入的问题，DOCS是在数据库中检索得到的与QUERY相关的知识文档，GOOD RESPONSE是相比于BAD RESPONSE更符合人类偏好的LLM回复。 \\ \# QUERY \\ 作为个人知识答疑助手，请根据上述参考内容回答下面问题，答案中不允许包含编造内容。 \\ 问题是：<original query> \\ \# DOCS \\ <docs> \\ \# GOOD RESPONSE \\ <good response> \\ \# BAD RESPONSE \\ <bad response> \\ \# TASK \\ 你的任务是： \\ 1. 判断检索到的DOCS是否与QUERY相关，以及DOCS中的信息是否能够回答QUERY中的问题； \\ 2. 从事实性、完整性、逻辑性三个方面对比GOOD RESPONSE和BAD RESPONSE，分析可能导致LLM给出BAD RESPONSE的原因； \\ 3. 若DOCS与QUERY相关性不高，重写一个新的Query，用于数据库检索，使得检索到的DOCS的相关性更高，否则不需要重写； \\ 4. 作为专业的Prompt工程师，再重写一个新的QUERY，用于输入LLM，使得LLM更有可能给出GOOD RESPONSE。
-		\end{tabular} \\
-		\bottomrule[2pt]
-	\end{tabular}
-\end{table}
-
-随后，本节使用LLM来对数据集中的原始用户问题进行优化。本节使用基于CoT的提示工程方法，引导LLM通过人类偏好反馈数据识别出用户偏好特征，分析造成LLM生成差回答的原因以及好回答中蕴含的人类偏好特征。接着，分别针对数据库检索和LLM对话场景各自生成一个优化后的用户问题，使得在新的用户问题下，检索增强对话系统生成的回答分布更趋近于好回答分布，区别于差回答的分布。相较于直接进行用户问题优化，使用CoT生成人类偏好原因分析能够为用户问题优化任务补充流畅而符合逻辑的上下文，对复杂问题的理解产生增益。本节所使用的问题优化提示词如表\ref{query_optimize_prompt}所示。
-
-\subsection{问题有效性验证阶段}
-
-\begin{table}
-	\caption{\label{query_validation_prompt}问题有效性验证提示词格式。}
-	\centering{}%
-	\small 
-	\begin{tabular}{c}
-		\toprule[2pt]
-		有效性验证提示词\tabularnewline
-		\hline 
-		\begin{tabular}{p{15cm}}
-			\#SYSTEM \\ 你是一个大语言模型Prompt工程专家，你将根据我提供的信息完成我指定的任务。其中，QUERY表示用户输入的问题，DOCS是在数据库中检索得到的与QUERY相关的知识文档，RESPONSE是LLM的回复。 \\ \# QUERY \\ 作为个人知识答疑助手，请根据上述参考内容回答下面问题，答案中不允许包含编造内容。 \\ 问题是：<original query> \\ \# DOCS \\ <docs> \\ \# RESPONSE \\ < response> \\ \# TASK \\ 你的任务是： \\ 1. 判断检索到的DOCS是否与QUERY相关，以及DOCS中的信息是否能够回答QUERY中的问题； \\ 2. 判断RESPONSE是否能够准确、可靠地回答QUERY； \\ 3. 对RESPONSE进行评分，分数取值范围为[1, 10]。 \\ 
-		\end{tabular} \\
-		\bottomrule[2pt]
-	\end{tabular}
-\end{table}
-
-LLM生成的问题可能仍然存在理解偏差问题，若直接使用带噪声的数据进行后续训练，可能加重模型理解偏差，损害模型性能。因此，本节将优化后的问题重新输入系统，得到新的模型回复，并利用大型语言模型的反思能力，对新回复的质量进行评判，以筛选出有效的偏好数据样本，提高数据集信噪比。并得到最终的优化问题三元组数据集。其中，本阶段所使用的问题有效性验证提示词如表\ref{query_validation_prompt}所示，有效性验证过程包含三个步骤：1）计算知识文档与用户问题的相关性，即验证优化后的问题是否与知识文档的语义空间完成对齐；2）计算模型回答的正确性，即验证优化后的问题与对话模型是否完成对齐；3）根据上述相关性和正确性结果，给出最终的问题优化有效性评分，取值范围为[1, 10]。
-% TODO：包含三步骤...
-
-\subsection{问题优化器训练阶段}
-
-基于前述步骤所构建的人类偏好数据集，训练一个Seq2Seq\cite{DBLP:journals/corr/abs-2309-16609}模型作为问题优化器，实现模型无关的、可插拔的用户问题自动优化。形式上，给定原始用户问题$Q_{ori}$，优化器生成优化后的用户问题$Q_{opt}$：
-\begin{equation}
-	Q_{opt} = [Q_{search}, [SEP], Q_{qa}]
-\end{equation}
-其中，$Q_{search}$表示用于数据库检索的问题，$Q_{qa}$表示用于回答生成的问题，$[SEP]$为特殊标识符，用于分隔$Q_{search}$和$Q_{qa}$。
-
-本节使用交叉熵损失函数作为训练目标，损失函数定义为:
-\begin{equation}
-	\mathcal{L}=-\frac{1}{N} \sum_{t=1}^N \log P\left(x_t \mid Q_{\text{ori}}, x_{<t}\right)
-\end{equation}
-其中，$N$是$Q_{opt}$的长度，$x_t$表示$Q_{opt}$中的第$t$个标识符。本章选择Qwen-7B作为基座模型，以更好地学习$Q_{ori}$和$Q_{opt}$之间的隐式偏好映射。同时，在目前的主流LLM中，7B模型的参数量相对较小，能够以更低的成本进行训练和推理，具有更低的推理延迟，作为本方法中的问题优化器具有一定优势。
 
 \section{实验结果}
 
@@ -300,8 +300,6 @@ LLM生成的问题可能仍然存在理解偏差问题，若直接使用带噪�
 
 \subsection{问题有效性验证模块的有效性}
 
-QAHF的一个重要组成部分是利用反馈来优化用户指令。为了研究反馈对QAHF的快速优化有多大贡献，进行了消融实验，以比较反馈学习优化(QAHF)和直接使用ChatGPT进行快速优化。如表\ref{evaluation_pk_fiqa}和表\ref{evaluation_pk_alphafin}所示，直接优化可以提高模型性能，这验证了LLM成为良好提示工程师的潜力。QAHF提供了超越直接优化的进一步改进。这表明，纳入反馈允许LLM根据所展示的用户偏好来完善提示，从而实现更有效的提示优化。
-
 \begin{table}
 	\caption{\label{evaluation_pk_fiqa}在FinGPT-FiQA数据集上探究问题有效性验证模块对性能的影响。}
 	\centering
@@ -335,7 +333,7 @@ QAHF的一个重要组成部分是利用反馈来优化用户指令。为了研�
 	\end{tabular}
 \end{table}
 
-本节基于Ragas评估框架对完整的QAHF方法和去除提示词有效性验证模块后的QAHF方法进行性能比较，实验结果如表\ref{evaluation_ragas}所示。从表中结果可以看出，去除提示词有效性验证模块后，数据中噪声偏多，因此模型在Context Precision和Faithfulness指标上都仅有0.03和0.02的微弱提升，甚至在Context Recall上有0.01的降低。而增加提示词有效性验证模块后，模型在Context Precision和Faithfulness指标上有了显著提升，分别提升了0.11和0.06分，而在Context Recall指标上，与原始结果几乎相同，仅相差0.001。对于Context Recall指标上分数的降低，可能是因为问题改写仅影响模型回复与用户问题之间的相关性，而Context Recall评估的是用户问题和知识文档之间的相似性，因此在这一指标上，所对比的三种方法得分相近。
+QAHF的一个重要组成部分是利用反馈来优化用户指令。为了研究反馈对QAHF的快速优化有多大贡献，进行了消融实验，以比较反馈学习优化(QAHF)和直接使用ChatGPT进行快速优化。如表\ref{evaluation_pk_fiqa}和表\ref{evaluation_pk_alphafin}所示，直接优化可以提高模型性能，这验证了LLM成为良好提示工程师的潜力。QAHF提供了超越直接优化的进一步改进。这表明，纳入反馈允许LLM根据所展示的用户偏好来完善提示，从而实现更有效的提示优化。
 
 \begin{table}
 	\caption{\label{evaluation_ragas}在Ragas指标上问题有效性验证模块对性能的影响。}
@@ -350,8 +348,6 @@ QAHF的一个重要组成部分是利用反馈来优化用户指令。为了研�
 		\bottomrule[2pt]
 	\end{tabular}
 \end{table}
-
-同时，表\ref{valid_invalid_example}展示了具体的有效样本和无效样本内容，从示例内容可以看出，无效样本的优化问题将原始问题中的“杭州公司股票”改为了“杭州的公司”，导致问题对象发生变化，导致最终模型回复不符合用户初始意图。有效性验证模块能够准确地从初始数据集中过滤无效样本，提高训练数据集的信噪比，避免进一步加重模型的幻觉现象。
 
 \begin{table}
 	\caption{\label{valid_invalid_example}有效样本与无效样本对比。}
@@ -387,11 +383,11 @@ QAHF的一个重要组成部分是利用反馈来优化用户指令。为了研�
 	\end{tabular}
 \end{table}
 
-\subsection{迭代优化对算法性能的影响}
+本节基于Ragas评估框架对完整的QAHF方法和去除提示词有效性验证模块后的QAHF方法进行性能比较，实验结果如表\ref{evaluation_ragas}所示。从表中结果可以看出，去除提示词有效性验证模块后，数据中噪声偏多，因此模型在Context Precision和Faithfulness指标上都仅有0.03和0.02的微弱提升，甚至在Context Recall上有0.01的降低。而增加提示词有效性验证模块后，模型在Context Precision和Faithfulness指标上有了显著提升，分别提升了0.11和0.06分，而在Context Recall指标上，与原始结果几乎相同，仅相差0.001。对于Context Recall指标上分数的降低，可能是因为问题改写仅影响模型回复与用户问题之间的相关性，而Context Recall评估的是用户问题和知识文档之间的相似性，因此在这一指标上，所对比的三种方法得分相近。
 
-由于QAHF可以优化用户问题以获得更好的模型回复，自然的想法是，是否可以多次迭代优化用户问题，逐步增强LLM的输出。因此，本节在AlphaFin-test数据集上进行了实验，探究迭代优化对算法性能的影响。具体来说，本节对原始用户问题进行了5次迭代优化，并与原始问题进行了Ragas可信度和上下文准确率指标的比较。如图\ref{multi_iter_optimize_ragas_faithfulness}所示，在第1次迭代中，ChatGLM和ChatGPT模型的回复可信度均有明显的改善。在前3次迭代中，可信度基本持平。而在第4次迭代时，ChatGPT性能略有下降，ChatGLM则显著降低。此外，本节还发现QAHF表现出良好的保留性，当输入的原始问题已经足够好时，QAHF有很高的概率保留它。本节认为这是实现迭代增强的关键因素，因为它避免了对用户的原始意图进行不合理的更改。
+同时，表\ref{valid_invalid_example}展示了具体的有效样本和无效样本内容，从示例内容可以看出，无效样本的优化问题将原始问题中的“杭州公司股票”改为了“杭州的公司”，导致问题对象发生变化，导致最终模型回复不符合用户初始意图。有效性验证模块能够准确地从初始数据集中过滤无效样本，提高训练数据集的信噪比，避免进一步加重模型的幻觉现象。
 
-同时，本节探究迭代优化对上下文准确率指标的影响情况，即探究其对数据库知识文档检索精度的影响，结果如图\ref{multi_iter_optimize_ragas_precision}所示。在经过第1次迭代优化后，上下文准确率由0.6717显著提升至0.7839。在第2、3次优化后，准确率增速减缓，提升至0.8032。在第4、5次优化后，准确率下降到0.7444。可以看出，多次迭代优化对知识文档检索准确度的收益不高，在第4次优化后出现负面影响。
+\subsection{迭代优化对方法性能的影响}
 
 \begin{figure}[htbp]
 	\centering
@@ -407,7 +403,11 @@ QAHF的一个重要组成部分是利用反馈来优化用户指令。为了研�
 	\end{minipage}
 \end{figure}
 
-\subsection{人类反馈对算法性能的影响}
+由于QAHF可以优化用户问题以获得更好的模型回复，自然的想法是，是否可以多次迭代优化用户问题，逐步增强LLM的输出。因此，本节在AlphaFin-test数据集上进行了实验，探究迭代优化对方法性能的影响。具体来说，本节对原始用户问题进行了5次迭代优化，并与原始问题进行了Ragas可信度和上下文准确率指标的比较。如图\ref{multi_iter_optimize_ragas_faithfulness}所示，在第1次迭代中，ChatGLM和ChatGPT模型的回复可信度均有明显的改善。在前3次迭代中，可信度基本持平。而在第4次迭代时，ChatGPT性能略有下降，ChatGLM则显著降低。此外，本节还发现QAHF表现出良好的保留性，当输入的原始问题已经足够好时，QAHF有很高的概率保留它。本节认为这是实现迭代增强的关键因素，因为它避免了对用户的原始意图进行不合理的更改。
+
+同时，本节探究迭代优化对上下文准确率指标的影响情况，即探究其对数据库知识文档检索精度的影响，结果如图\ref{multi_iter_optimize_ragas_precision}所示。在经过第1次迭代优化后，上下文准确率由0.6717显著提升至0.7839。在第2、3次优化后，准确率增速减缓，提升至0.8032。在第4、5次优化后，准确率下降到0.7444。可以看出，多次迭代优化对知识文档检索准确度的收益不高，在第4次优化后出现负面影响。
+
+\subsection{人类反馈对方法性能的影响}
 
 \begin{table}
 	\caption{\label{human_feedback_pk}在偏好评价指标上人类反馈对性能的影响。}
