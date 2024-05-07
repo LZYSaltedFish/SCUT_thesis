@@ -74,7 +74,13 @@ Bao等人\cite{DBLP:conf/acl/BaoHWWW20}提出对话行为隐变量，用以表�
 
 \subsection{基于外部知识的垂直领域对话生成}
 
-Lin等人\cite{DBLP:conf/acl/LinJHWC20}提出基于拷贝机制的知识对话方法KIC，将循环知识交互解码器与知识感知的Pointer Net相结合，实现知识生成和知识拷贝。
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[scale=0.5]{Fig/KIC.png}
+	\caption{\label{kic_architecture}KIC算法框架示意图\cite{DBLP:conf/acl/LinJHWC20}。}
+\end{figure}
+
+Lin等人\cite{DBLP:conf/acl/LinJHWC20}提出基于拷贝机制的知识对话方法KIC，将循环知识交互解码器与知识感知的Pointer Net相结合，实现知识生成和知识拷贝，其算法框架如图\ref{kic_architecture}所示。
 Wu等人\cite{DBLP:conf/acl/WuLZZW20}采用一个多类别分类器对生成的单词、生成的知识实体和拷贝的查询单词进行融合，提升了模型生成回答的准确性、一致性和知识性。
 Majumder等人\cite{DBLP:conf/emnlp/MajumderJBM20}同时进行角色信息选择和基于角色的响应生成，并使用强化学习训练对话智能体。
 Moon等人\cite{DBLP:conf/acl/MoonSKS19}结合知识图谱与对话系统，将知识图谱信息作为外部知识，在强化学习框架中，智能体基于当前节点和状态选择相应的边，然后将知识组合到回答生成过程中。
@@ -87,12 +93,18 @@ Lv等人\cite{SJSJ202312037}提出嵌入知识语义的医疗领域对话系统�
 
 \subsection{基于知识注入的垂直领域对话生成}
 
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[scale=0.5]{Fig/self-instruct_architecture.png}
+	\caption{\label{self_instruct_architecture}Self-Instruct算法框架示意图\cite{DBLP:conf/acl/WangKMLSKH23}。}
+\end{figure}
+
 Wu等人\cite{DBLP:journals/corr/abs-2303-17564}提出BloombergGPT金融大模型，使用通用语料与金融领域语料混合的数据集，从头训练领域大模型，在模型学习基本语言语法和世界常识的同时，注入垂直领域知识。然而，从头开始预训练大模型需要收集大规模的通用语料，同时提高模型后续在语言层面的迁移难度。因此，较为主流的知识注入方式是在预训练通用模型的基础上进行继续预训练或监督微调。
 Zhang等人\cite{DBLP:conf/cikm/ZhangY23}提出XuanYuan金融领域大模型在预训练语言模型Bloom的基础上使用混合数据继续预训练，混合数据包含通用领域数据和金融领域内的专业知识数据，并采用Hybrid-Tuning训练策略，在提升模型领域内能力的基础上，保证模型通用能力不会退化。
 Meng等人\cite{DBLP:conf/sigir/MengRCSRTR20}提出DukeNet，构建了一个双向知识交互网络，实现面向垂直领域知识的对话生成。
 Chen等人\cite{DBLP:journals/corr/abs-2310-15896}提出扁鹊模型，通过构建高质量的医学领域对话数据集，得到预训练模型在下游对话任务上的良好性能。
 Zhou等人\cite{DBLP:conf/acl/ZhouZHHZ20}提出KdConv，即中文多领域知识驱动对话数据集，通过在数据集上训练将知识注入模型中。
-上述方法都需要构建大规模高质量领域内训练语料，对于垂直领域对话生成任务，往往还需要耗费人力，将其处理为“指令-回答”格式的对话数据，因此高质量的领域对话数据集十分稀缺。为解决数据稀缺的问题，Wang等人\cite{DBLP:conf/acl/WangKMLSKH23}提出Self-Instruct方法，利用大型语言模型对小规模的种子样本进行数据扩充，以生成更多符合要求的微调数据。
+上述方法都需要构建大规模高质量领域内训练语料，对于垂直领域对话生成任务，往往还需要耗费人力，将其处理为“指令-回答”格式的对话数据，因此高质量的领域对话数据集十分稀缺。为解决数据稀缺的问题，Wang等人\cite{DBLP:conf/acl/WangKMLSKH23}提出Self-Instruct方法，利用大型语言模型对小规模的种子样本进行数据扩充，以生成更多符合要求的微调数据，其算法框架如图\ref{self_instruct_architecture}所示。
 Zhang等人\cite{DBLP:journals/corr/abs-2305-11952}提出Self-QA方法，直接基于非结构化文档数据生成指令数据，无需初始种子数据，进一步降低了数据扩充的人力成本。
 Wang等人\cite{DBLP:journals/corr/abs-2304-06975}提出Self-KG方法，基于中文医药知识图谱CMeKG生成指令数据，利用知识图谱中的节点关联信息，生成更高质量的指令数据。
 
@@ -101,23 +113,35 @@ Wang等人\cite{DBLP:journals/corr/abs-2304-06975}提出Self-KG方法，基于�
 \section{基于大型语言模型的对话生成}
 
 近年来，随着ChatGPT\cite{DBLP:conf/nips/Ouyang0JAWMZASR22}的发布，国内外先后出现许多预训练大型语言模型，如ChatGLM\cite{DBLP:conf/iclr/ZengLDWL0YXZXTM23}、文心一言\cite{DBLP:journals/corr/abs-2107-02137}、通义千问\cite{DBLP:journals/corr/abs-2309-16609}、LLaMA\cite{DBLP:journals/corr/abs-2302-13971}、百川\cite{DBLP:journals/corr/abs-2309-10305}等。因此，越来越多的研究者将大型语言模型作为对话生成研究的基础。
-基于大型语言模型的对话生成可分为两类：（1）基于提示词工程的方法；（2）基于监督数据微调的方法。
+基于大型语言模型的对话生成可分为三类：（1）基于提示词工程的方法；（2）基于检索增强的方法；（3）基于模型微调的方法。
 
 \subsection{基于提示工程的对话生成}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[scale=0.6]{Fig/tot.png}
+	\caption{\label{tot}ToT算法搜索策略与系统架构示意图\cite{DBLP:journals/corr/abs-2305-08291}。}
+\end{figure}
 
 Radford等人\cite{radford2019language}提出Zero-shot提示方法，利用大型语言模型进行范式迁移，无需训练即可让预训练模型完成下游任务，但该方法得到的输出可能不够准确或不符合预期。
 为此，Brown等人\cite{DBLP:conf/nips/BrownMRSKDNSSAA20}提出Few-shot提示方法，在模型输入中提供高质量的示例，提升模型在复杂任务上的性能。
 Wei等人\cite{DBLP:conf/nips/Wei0SBIXCLZ22}提出思维链（Chain-of-Thought，CoT）提示方法，通过在模型输入的结尾引导模型一步步思考，并在给出回复前先对问题进行拆解和分析，使得模型最终输出的答案更加准确。
 Wang等人\cite{DBLP:conf/iclr/0002WSLCNCZ23}引入自洽性（Self-Consistency）解码策略，通过采样生成多条推理链，然后采用投票方法从这些推理链中选出一致性最高的答案，在GSM8K复杂推理数据集上，Self-Consistency相比于CoT方法有17.9\%的提升，证明该方法能很好的提升LLM的复杂任务推理能力。
-Long等人\cite{DBLP:journals/corr/abs-2305-08291}提出思维树（Tree-of-Thought，ToT）提示方法，ToT是对CoT方法的扩展，通过管理树结构的中间推理步骤，同时使用深度优先或广度优先等搜索算法，对推理链路进行系统性扩展，使模型在得到错误答案时能够进行回溯，ToT在24类游戏任务上取得了74\%的成功率，而CoT仅有4\%。
+Long等人\cite{DBLP:journals/corr/abs-2305-08291}提出思维树（Tree-of-Thought，ToT）提示方法，如图\ref{tot}所示，ToT是对CoT方法的扩展，通过管理树结构的中间推理步骤，同时使用深度优先或广度优先等搜索算法，对推理链路进行系统性扩展，使模型在得到错误答案时能够进行回溯，ToT在24类游戏任务上取得了74\%的成功率，而CoT仅有4\%。
 Yao等人\cite{DBLP:journals/corr/abs-2305-16582}提出思维图（Graph-of-Thought，GoT）提示方法，使用基于图的架构，更好地适应人类非线性思考地特性。这类方法不需要重新训练模型即可提升模型性能，但提升受限于预训练模型自身的能力上限。
 
 总结：提示工程方法的复杂度和成本相对较低，具有较高的灵活性，但生成的结果准确性受限于基座模型自身的能力，通常会出现不符合事实的回答，难以应对垂直领域对话。
 
 \subsection{基于检索增强的对话生成}
 
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[scale=0.48]{Fig/meta_rag_framework.png}
+	\caption{\label{meta_rag_framework}检索增强生成算法框架示意图\cite{DBLP:conf/nips/LewisPPPKGKLYR020}。}
+\end{figure}
+
 大型语言模型具有良好的自然语言理解和自然语言生成能力，但往往面临幻觉问题，即回复内容不符合事实，甚至胡编乱造。这可能是因为模型在预训练阶段记忆了错误的知识，或是推理时的输入是预训练阶段没有遇到过的长尾知识。
-针对后者，Lewis等人\cite{DBLP:conf/nips/LewisPPPKGKLYR020}提出检索增强生成（Retrieval Augmented Generation，RAG）技术，通过构建本地知识库，在对话阶段从知识库中召回与用户问题相关的文档，作为外部知识辅助语言模型给出回复，很好地缓解了大型语言模型的幻觉问题和实时性不足的问题。
+针对后者，Lewis等人\cite{DBLP:conf/nips/LewisPPPKGKLYR020}提出检索增强生成（Retrieval Augmented Generation，RAG）技术，通过构建本地知识库，在对话阶段从知识库中召回与用户问题相关的文档，作为外部知识辅助语言模型给出回复，很好地缓解了大型语言模型的幻觉问题和实时性不足的问题，其算法框架如图\ref{meta_rag_framework}所示。
 Wang等人\cite{DBLP:conf/emnlp/WangYW23}提出Query2doc方法，利用大型语言模型对用户问题生成伪文档，以提升知识库的召回准确度，以减少无关文档对语言模型回复产生噪声干扰。
 Jagerman等人\cite{DBLP:journals/corr/abs-2305-03653}在Query2doc方法的基础上提出思维链技术与伪相关反馈（Pseudo-Relevance Feedback，PRF）算法相结合的方法，在多个基准数据集上获得了超过Query2doc方法的效果。
 Liu等人\cite{DBLP:journals/corr/abs-2307-03172}的研究表明，当相关信息出现在模型输入上下文的开头或结尾时，模型的性能最好，相关信息出现在中间位置时模型表现最差，且随着输入上下文的增长，模型性能显著下降，表明模型很难从长输入上下文中检索和使用相关信息。因此召回的知识文档数量及其在模型输入中的位置对模型性能至关重要。
@@ -130,6 +154,13 @@ Cui等人\cite{DBLP:journals/corr/abs-2306-16092}提出ChatLaw中文法律大模
 
 根据研究目标的不同，基于模型微调的方法主要可分为两类：（1）参数高效的微调方法；（2）人类偏好对齐的微调方法。
 
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[scale=0.65]{Fig/delta-tuning.png}
+	\caption{\label{delta_tuning}参数高效微调方法分类示意图\cite{DBLP:journals/corr/abs-2203-06904}。}
+\end{figure}
+
+如图\ref{delta_tuning}所示，参数高效微调方法主要分为三类：额外参数型、指定参数型和重参数化型。
 Houlsby等人\cite{DBLP:conf/icml/HoulsbyGJMLGAG19}提出适配器微调（Adapter-Tuning）方法，在Tranformer层中插入小规模的神经网络模块，并在训练过程中冻结模型原有参数，仅更新这些适配器模块，实现与全量微调相近的性能。
 Mahabadi等人\cite{DBLP:conf/nips/MahabadiHR21}提出Compacter方法，通过结合超复数乘法和参数共享，将模型原有的线性层视为两个小矩阵的Kronecker积，实现在不损害模型性能的情况下显著减少适配器参数量。
 Pfeiffer等人\cite{DBLP:conf/eacl/PfeifferKRCG21}提出AdapterFusion方法，先分别训练任务特定的适配器，再将不同任务的适配器融合起来，以利用跨任务知识来提升迁移学习的性能。
@@ -147,7 +178,13 @@ Hu等人\cite{DBLP:conf/iclr/HuSWALWWC22}提出了低秩自适应（Low-Rank Ada
 Qiu等人\cite{DBLP:journals/corr/abs-2110-07867}进一步提出假设，认为多任务自适应存在一个通用的内在空间，因此能够将多任务学习过程重新参数化为一个低维内在子空间的优化过程。
 总体来说，基于监督数据微调的方法性能优于基于提示词工程的方法，但存在高质量标注数据难获取的问题。
 
-Long等人\cite{DBLP:conf/nips/Ouyang0JAWMZASR22}提出基于人类反馈的强化学习（Reinforcement Learning with Human Feedback，RLHF）算法，其工作过程包括采集高质量数据集对语言模型监督微调（SFT）、收集人类偏好排名数据集并训练奖励模型（RM）、执行近端策略优化（Proximal Policy Optimization，PPO）强化学习。
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[scale=0.5]{Fig/rlhf_framework.png}
+	\caption{\label{rlhf_framework}RLHF算法框架示意图\cite{DBLP:conf/nips/Ouyang0JAWMZASR22}。}
+\end{figure}
+
+Long等人\cite{DBLP:conf/nips/Ouyang0JAWMZASR22}提出基于人类反馈的强化学习（Reinforcement Learning with Human Feedback，RLHF）算法，其工作过程包括采集高质量数据集对语言模型监督微调（SFT）、收集人类偏好排名数据集并训练奖励模型（RM）、执行近端策略优化（Proximal Policy Optimization，PPO）强化学习，其算法框架如图\ref{rlhf_framework}所示。
 该算法能够很好地帮助模型生成符合人类偏好的回复，同时减少生成式模型中的偏见。然而，RLHF算法在PPO强化学习训练阶段需要同时使用四个大型语言模型，导致训练计算资源开销大，同时PPO强化学习过程不稳定，导致模型难以训练。为此，许多研究者提出其他的人类偏好对齐算法替代RLHF算法。
 Li等人\cite{DBLP:journals/corr/abs-2309-07124}提出RAIN可回滚自回归推理算法，利用语言模型评估自己生成的结果，并用评估结果来指导语言模型输出，以确保输出符合人类偏好，无需微调即可实现语言模型与人类偏好的对齐。
 Zheng等人\cite{DBLP:journals/corr/abs-2307-04964}针对PPO训练不稳定的问题，通过实验探索了PPO训练中最关键的技巧，并用PPO-max表示这套最佳实现方式。

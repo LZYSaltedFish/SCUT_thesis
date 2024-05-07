@@ -663,7 +663,7 @@ GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据
 	\end{tabular}
 \end{table}
 
-本节通过设置消融实验探究不同LoRA秩对模型性能的影响，测试数据集为AlphaFin-test，实验结果如表\ref{lora_rank_ablation}所示。随着LoRA秩的增大，模型训练所消耗的显存和训练时长有轻微的增加。同时，LoRA秩在非常小的取值，如r=1时，模型就已经表现出良好的Recall和Faithfulness性能。然而，模型性能并未与LoRA秩表现出正相关关系，本文认为这是因为ChatGLM2-6B模型在该项任务上的内在秩较小，因此选择较小的LoRA秩即可覆盖关键子空间。本章基于经验主义选择r=8作为超参数LoRA秩的取值。
+本节通过设置消融实验探究不同LoRA秩对模型性能的影响，测试数据集为AlphaFin-test，实验结果如表\ref{lora_rank_ablation}所示。随着LoRA秩的增大，模型训练所消耗的显存和训练时长有轻微的增加。同时，LoRA秩在非常小的取值，如rank=1时，模型就已经表现出良好的Recall和Faithfulness性能。然而，模型性能并未与LoRA秩表现出正相关关系，本文认为这是因为ChatGLM2-6B模型在该项任务上的内在秩较小，因此选择较小的LoRA秩即可覆盖关键子空间。本章基于经验主义选择rank=8作为超参数LoRA秩的取值。
 
 \section{本章小结}
 
