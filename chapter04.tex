@@ -158,7 +158,8 @@ LLM生成的优化问题可能仍然存在理解偏差问题，这类无效样�
 
 \begin{itemize}[topsep = 0 pt, itemsep= 0 pt, parsep=0pt, partopsep=0pt, leftmargin=36pt, itemindent=0pt, labelsep=6pt, listparindent=24pt]
 	\item FinGPT-FiQA\cite{wang2023fingptbenchmark}是Wang等人创建的人工评估数据集。它包含了17.1k个金融领域的用户问题与回答样本，这些样本均采样于实际应用场景。本节从中抽取了1000个样本作为实验的测试数据。
-	\item AlphaFin-test是本文第三章中构建的AlphaFin数据集的测试集，它包含1000条金融与数据问答对，AlphaFin-test数据集能够评估模型在金融领域对话上的性能表现。更详细的数据集介绍参考第三章内容。
+	\item AlphaFin-test是本文第三章中构建的AlphaFin数据集的测试集，它包含1000条金融与数据问答对，AlphaFin-test数据集能够评估模型在金融领域对话上的性能表现。更详细的数据集介绍参考第三章内容。	
+	\item Aliyun-Docs：Aliyun-Docs来自从阿里云官网爬取的3206个云计算产品文档，经过HTMl源码清洗后得到3005个可用知识文档。同时，Aliyun-Docs还包含阿里云线上业务场景中采集到的13995个客户问题，所有数据均经过脱敏处理。
 \end{itemize}
 
 \subsection{评价指标}
@@ -211,8 +212,6 @@ LLM生成的优化问题可能仍然存在理解偏差问题，这类无效样�
 	\end{tabular}
 \end{table}
 
-详细的实验结果如表\ref{qahf_single_performance}所示。基于本章所提出的QAHF方法，在所有基座模型和所有数据集上，其性能均优于原始问题，取得了更高的胜率，证明了本章方法的有效性和广泛适用性。值得注意的是，在ChatGLM、FinGPT、Qwen等相对小尺寸的开源模型上，QAHF相比于原始问题的胜率分别提高了32.1\%、30.5\%和20.1\%，FinGPT在数据集FinGPT-FiQA Eval上甚至达到了37.4\%的提升，而在ChatGPT这类模型上，胜率提升在10\%以内，说明本章方法对于尺寸更小、基础能力相对更弱的基座模型能够收获更大的对齐收益。
-
 \begin{table}
 	\caption{\label{qahf_bpo_performance}QAHF与BPO在FinGPT-FiQA Eval和AlphaFin-test上的性能对比。}
 	\centering
@@ -233,11 +232,31 @@ LLM生成的优化问题可能仍然存在理解偏差问题，这类无效样�
 	\end{tabular}
 \end{table}
 
-如表\ref{qahf_bpo_performance}所示，BPO和QAHF均成功提升了ChatGLM和ChatGPT模型的性能。此外，在QAHF与BPO的所有对比实验中，QAHF均取得了正向的胜率提升，进一步证明QAHF方法相较于BPO方法的优越性。
+\begin{table}
+	\caption{\label{qahf_bpo_aliyun_performance}QAHF与BPO在Aliyun-Docs上的性能对比。}
+	\centering
+	\begin{tabular}{lcc|ccc|c}
+		\toprule[2pt]
+		\multirow{2}*{模型} & \multicolumn{2}{c|}{方法} & \multicolumn{3}{c|}{Aliyun-Docs} & \multirow{2}*{$\Delta$ WR} \\
+		\cline{2-6}
+		~ & A & B & A win & Tie & B win & ~ \\
+		\hline
+		\multirow{3}*{ChatGLM} & BPO & ori. & \textbf{32.6\%} & 28.0\% & 39.4\% & -6.8\% \\
+		~ & QAHF & BPO & \textbf{35.1\%} & 38.7\% & 26.2\% & +8.9\% \\
+		~ & QAHF & ori. & \textbf{51.9\%} & 31.4\% & 16.7\% & +35.2\% \\
+		\hline
+		\multirow{3}*{ChatGPT} & BPO & ori. & \textbf{37.2\%} & 29.1\% & 33.7\% & +3.5\% \\
+		~ & QAHF & BPO & \textbf{34.5\%} & 33.4\% & 32.1\% & +2.4\% \\
+		~ & QAHF & ori. & \textbf{40.3\%} & 23.1\% & 36.6\% & +3.7\% \\
+		\bottomrule[2pt]
+	\end{tabular}
+\end{table}
 
-同时，本实验还对比了QAHF和PPO强化学习对齐方法的性能差异，结果如表\ref{qahf_ppo_performance}所示。从表中可以看出，由于PPO训练稳定性较差，虽然训练实现了收敛，但PPO方法对模型性能的提升较为有限，75.4\%的样本没有明显提升，胜率仅有2.8\%。而QAHF方法依然能获得10\%以上的稳定提升。
+详细的实验结果如表\ref{qahf_single_performance}所示。基于本章所提出的QAHF方法，在所有基座模型和所有数据集上，其性能均优于原始问题，取得了更高的胜率，证明了本章方法的有效性和广泛适用性。值得注意的是，在ChatGLM、FinGPT、Qwen等相对小尺寸的开源模型上，QAHF相比于原始问题的胜率分别提高了32.1\%、30.5\%和20.1\%，FinGPT在数据集FinGPT-FiQA Eval上甚至达到了37.4\%的提升，而在ChatGPT这类模型上，胜率提升在10\%以内，说明本章方法对于尺寸更小、基础能力相对更弱的基座模型能够收获更大的对齐收益。
 
-本节对比原始用户问题和使用BPO、QAHF方法进行优化后的问题，得到结果如表\ref{query_compare_sota}所示。从表中可以看出，BPO方法没有考虑检索得到的知识文档信息，而直接对用户问题和模型回复进行分析和重写，因此重写后的问题局限于参考回答中的局部信息，而QAHF方法根据检索到的研报和新闻数据，分析出文档包含了该公司的市场份额相关信息，包括各项业务的增长情况、市场排名等，因此将原始用户问题中的表述扩展为“业务增长情况和市场排名”。
+如表\ref{qahf_bpo_performance}所示，BPO和QAHF均成功提升了ChatGLM和ChatGPT模型在FinGPT-FiQA Eval和AlphaFin-test数据集上的性能。此外，在QAHF与BPO的所有对比实验中，QAHF均取得了正向的胜率提升，说明QAHF能够针对检索增强生成场景更好地对齐人类偏好，进一步证明QAHF方法相较于BPO方法的优越性。
+
+如表\ref{qahf_bpo_aliyun_performance}所示，由于Aliyun-Docs为私有领域产品相关数据，长尾效应显著，使用BPO方法直接对用户问题进行优化，在ChatGLM模型上产生了负向收益，反而加大了模型的理解偏差。而使用QAHF方法，在问题优化过程中引入外部知识文档，使得ChatGLM模型和ChatGPT模型在问题优化后均能获得较高的胜率提升。
 
 \begin{table}
 	\caption{\label{qahf_ppo_performance}QAHF与PPO在AlphaFin-test上的性能对比。}
@@ -303,7 +322,51 @@ LLM生成的优化问题可能仍然存在理解偏差问题，这类无效样�
 	\end{tabular}
 \end{table}
 
+同时，本实验还对比了QAHF和PPO强化学习对齐方法的性能差异，结果如表\ref{qahf_ppo_performance}所示。从表中可以看出，由于PPO训练稳定性较差，虽然训练实现了收敛，但PPO方法对模型性能的提升较为有限，75.4\%的样本没有明显提升，胜率仅有2.8\%。而QAHF方法依然能获得10\%以上的稳定提升。
+
+本节对比原始用户问题和使用BPO、QAHF方法进行优化后的问题，得到结果如表\ref{query_compare_sota}所示。从表中可以看出，BPO方法没有考虑检索得到的知识文档信息，而直接对用户问题和模型回复进行分析和重写，因此重写后的问题局限于参考回答中的局部信息，而QAHF方法根据检索到的研报和新闻数据，分析出文档包含了该公司的市场份额相关信息，包括各项业务的增长情况、市场排名等，因此将原始用户问题中的表述扩展为“业务增长情况和市场排名”。
+
 基于上述三种原始问题和优化问题，得到的模型回复情况如表\ref{response_compare_sota}所示。从表中可以看出，基于原始问题，模型无法准确理解市场份额的意义，因此认为知识文档中不包含与此相关的内容，做出了拒绝回答的行为；基于BPO优化后的问题聚焦于更细分的代理买卖证券业务、股权投资收益、财富管理等方面，但由于与知识文档内容存在偏差，模型回复出现编造数据等偏离事实性的现象；基于QAHF优化后的问题，紧扣知识文档内容，同时对简单的问题进行详细展开，使得模型能更好抓住文档中的重点，因此回复更详细且数据准确。
+
+\subsection{人类反馈对方法性能的影响}
+
+\begin{table}
+	\caption{\label{human_feedback_pk}在偏好评价指标上人类反馈对性能的影响。}
+	\centering
+	\begin{tabular}{lcc|ccc|c}
+		\toprule[2pt]
+		\multirow{2}*{模型} & \multicolumn{2}{c|}{方法} & \multicolumn{3}{c|}{AlphaFin-test} & \multirow{2}*{$\Delta$ WR} \\
+		\cline{2-6}
+		~ & A & B & A win & Tie & B win & ~ \\
+		\hline
+		\multirow{3}*{ChatGLM} & QAHF & ori. & \textbf{61.0\%} & 5.2\% & 33.8\% & +27.2\% \\
+		~ & w/o Human & ori. & \textbf{39.4\%} & 35.8\% & 24.8\% & +14.6\% \\
+		~ & QAHF & w/o Human & \textbf{45.7\%} & 20.3\% & 34.0\% & +11.7\% \\
+		\bottomrule[2pt]
+	\end{tabular}
+\end{table}
+
+QAHF的一个重要组成部分是利用人类反馈来优化用户问题。为了研究人类反馈对QAHF的优化效果有多大影响，本节进行了消融实验，以比较人类反馈学习优化(QAHF)和直接使用LLM（ChatGPT）进行优化的性能差异。如表\ref{human_feedback_pk}所示，使用LLM直接优化用户问题也能够提高模型回复性能，这表明LLM具有一定的用户问题优化的潜力。本章所提出的QAHF方法相较于没有人类反馈的直接优化方法，取得了11.7\%的胜率增量，这表明显式引入人类反馈能够进一步激发LLM优化检索增强对话场景下用户问题的潜力，从而实现更有效的人类偏好对齐。
+
+\subsection{迭代优化对方法性能的影响}
+
+\begin{figure}[htbp]
+	\centering
+	\begin{minipage}[t]{0.49\textwidth}
+		\centering
+		\includegraphics[width=7cm]{Fig/multi_iter_optimize_ragas_faithfulness.png}
+		\caption{\label{multi_iter_optimize_ragas_faithfulness}不同迭代优化次数对可信度的影响。}
+	\end{minipage}
+	\begin{minipage}[t]{0.49\textwidth}
+		\centering
+		\includegraphics[width=7cm]{Fig/multi_iter_optimize_ragas_precision.png}
+		\caption{\label{multi_iter_optimize_ragas_precision}不同迭代优化次数对上下文准确率的影响。}
+	\end{minipage}
+\end{figure}
+
+由于QAHF可以优化用户问题以获得更好的模型回复，自然的想法是，是否可以多次迭代优化用户问题，逐步增强LLM的输出。因此，本节在AlphaFin-test数据集上进行了实验，探究迭代优化对方法性能的影响。具体来说，本节对原始用户问题进行了5次迭代优化，并与原始问题进行了Ragas可信度和上下文准确率指标的比较。如图\ref{multi_iter_optimize_ragas_faithfulness}所示，在第1次迭代中，ChatGLM和ChatGPT模型的回复可信度均有明显的改善。在前3次迭代中，可信度基本持平。而在第4次迭代时，ChatGPT性能略有下降，ChatGLM则显著降低。此外，本节还发现QAHF表现出良好的保留性，当输入的原始问题已经足够好时，QAHF有很高的概率保留它。本节认为这是实现迭代增强的关键因素，因为它避免了对用户的原始意图进行不合理的更改。
+
+同时，本节探究迭代优化对上下文准确率指标的影响情况，即探究其对数据库知识文档检索精度的影响，结果如图\ref{multi_iter_optimize_ragas_precision}所示。在经过第1次迭代优化后，上下文准确率由0.6717显著提升至0.7839。在第2、3次优化后，准确率增速减缓，提升至0.8032。在第4、5次优化后，准确率下降到0.7444。可以看出，多次迭代优化对知识文档检索准确度的收益不高，在第4次优化后出现负面影响。
 
 \subsection{问题有效性验证模块的有效性}
 
@@ -393,46 +456,6 @@ QAHF的一个重要组成部分是利用反馈来优化用户指令。为了研�
 本节基于Ragas评估框架对完整的QAHF方法和去除提示词有效性验证模块后的QAHF方法进行性能比较，实验结果如表\ref{evaluation_ragas}所示。从表中结果可以看出，去除提示词有效性验证模块后，数据中噪声偏多，因此模型在Context Precision和Faithfulness指标上都仅有0.03和0.02的微弱提升，甚至在Context Recall上有0.01的降低。而增加提示词有效性验证模块后，模型在Context Precision和Faithfulness指标上有了显著提升，分别提升了0.11和0.06分，而在Context Recall指标上，与原始结果几乎相同，仅相差0.001。对于Context Recall指标上分数的降低，可能是因为问题改写仅影响模型回复与用户问题之间的相关性，而Context Recall评估的是用户问题和知识文档之间的相似性，因此在这一指标上，所对比的三种方法得分相近。
 
 同时，表\ref{valid_invalid_example}展示了具体的有效样本和无效样本内容，从示例内容可以看出，无效样本的优化问题将原始问题中的“杭州公司股票”改为了“杭州的公司”，导致问题对象发生变化，导致最终模型回复不符合用户初始意图。有效性验证模块能够准确地从初始数据集中过滤无效样本，提高训练数据集的信噪比，避免进一步加重模型的幻觉现象。
-
-\subsection{迭代优化对方法性能的影响}
-
-\begin{figure}[htbp]
-	\centering
-	\begin{minipage}[t]{0.49\textwidth}
-		\centering
-		\includegraphics[width=7cm]{Fig/multi_iter_optimize_ragas_faithfulness.png}
-		\caption{\label{multi_iter_optimize_ragas_faithfulness}不同迭代优化次数对可信度的影响。}
-	\end{minipage}
-	\begin{minipage}[t]{0.49\textwidth}
-		\centering
-		\includegraphics[width=7cm]{Fig/multi_iter_optimize_ragas_precision.png}
-		\caption{\label{multi_iter_optimize_ragas_precision}不同迭代优化次数对上下文准确率的影响。}
-	\end{minipage}
-\end{figure}
-
-由于QAHF可以优化用户问题以获得更好的模型回复，自然的想法是，是否可以多次迭代优化用户问题，逐步增强LLM的输出。因此，本节在AlphaFin-test数据集上进行了实验，探究迭代优化对方法性能的影响。具体来说，本节对原始用户问题进行了5次迭代优化，并与原始问题进行了Ragas可信度和上下文准确率指标的比较。如图\ref{multi_iter_optimize_ragas_faithfulness}所示，在第1次迭代中，ChatGLM和ChatGPT模型的回复可信度均有明显的改善。在前3次迭代中，可信度基本持平。而在第4次迭代时，ChatGPT性能略有下降，ChatGLM则显著降低。此外，本节还发现QAHF表现出良好的保留性，当输入的原始问题已经足够好时，QAHF有很高的概率保留它。本节认为这是实现迭代增强的关键因素，因为它避免了对用户的原始意图进行不合理的更改。
-
-同时，本节探究迭代优化对上下文准确率指标的影响情况，即探究其对数据库知识文档检索精度的影响，结果如图\ref{multi_iter_optimize_ragas_precision}所示。在经过第1次迭代优化后，上下文准确率由0.6717显著提升至0.7839。在第2、3次优化后，准确率增速减缓，提升至0.8032。在第4、5次优化后，准确率下降到0.7444。可以看出，多次迭代优化对知识文档检索准确度的收益不高，在第4次优化后出现负面影响。
-
-\subsection{人类反馈对方法性能的影响}
-
-\begin{table}
-	\caption{\label{human_feedback_pk}在偏好评价指标上人类反馈对性能的影响。}
-	\centering
-	\begin{tabular}{lcc|ccc|c}
-		\toprule[2pt]
-		\multirow{2}*{模型} & \multicolumn{2}{c|}{方法} & \multicolumn{3}{c|}{AlphaFin-test} & \multirow{2}*{$\Delta$ WR} \\
-		\cline{2-6}
-		~ & A & B & A win & Tie & B win & ~ \\
-		\hline
-		\multirow{3}*{ChatGLM} & QAHF & ori. & \textbf{61.0\%} & 5.2\% & 33.8\% & +27.2\% \\
-		~ & w/o Human & ori. & \textbf{39.4\%} & 35.8\% & 24.8\% & +14.6\% \\
-		~ & QAHF & w/o Human & \textbf{45.7\%} & 20.3\% & 34.0\% & +11.7\% \\
-		\bottomrule[2pt]
-	\end{tabular}
-\end{table}
-
-QAHF的一个重要组成部分是利用人类反馈来优化用户问题。为了研究人类反馈对QAHF的优化效果有多大影响，本节进行了消融实验，以比较人类反馈学习优化(QAHF)和直接使用LLM（ChatGPT）进行优化的性能差异。如表\ref{human_feedback_pk}所示，使用LLM直接优化用户问题也能够提高模型回复性能，这表明LLM具有一定的用户问题优化的潜力。本章所提出的QAHF方法相较于没有人类反馈的直接优化方法，取得了11.7\%的胜率增量，这表明显式引入人类反馈能够进一步激发LLM优化检索增强对话场景下用户问题的潜力，从而实现更有效的人类偏好对齐。
 
 \section{本章小结}
 
