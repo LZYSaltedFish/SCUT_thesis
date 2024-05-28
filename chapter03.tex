@@ -112,12 +112,15 @@
 
 \textbf{多路检索} 本节使用稀疏向量检索和稠密向量检索两种方式。BM25算法是常用的稀疏向量检索算法，通过词频逆文档频率（TF-IDF）计算用户问题和知识文档的词汇重叠率，从而得到二者的相似度得分。相较于稠密向量检索，BM25算法能够较好地从通用实体泛化到垂直领域罕见实体，缓解长尾效应。同时，BM25算法能够考虑到词在文档中的分布情况，更好的捕捉到词的上下文信息。给定用户问题$Q$和文档摘要$s_k$，其BM25相似度评分计算过程如下：
 \begin{equation}
-	Score_{bm25}(Q, s_k) = \sum_{i}^{N}IDF(q_i, s_k)\frac{f_i(k_1+1)}{f_i + k_1(1 - b + b\frac{sl}{avg(sl)})}
-\end{equation}
-\begin{equation}
 	IDF(q_i, s_k) = log\frac{sl-n_i+0.5}{n_i+0.5}
 \end{equation}
-其中，$N$表示$Q$中的单词数量，$q_i$表示$Q$中的第$i$个单词，$k_1$、$k_2$和$b$是调节因子，本节分别设置为2、0、0.75。$f_i$表示单词$q_i$在文档$s_k$中出现的频率，$n_i$表示$q_i$在$s_k$出现的次数，$sl$为文档$s_k$的长度，$avg(sl)$为知识库中所有文档的平均长度。基于评分$Score_{bm25}$对所有文档进行排序，可得到文档排列$R_{bm25}$。
+\begin{equation}
+	R(q_i, s_k) = \frac{f_i(k_1+1)}{f_i + k_1(1 - b + b\frac{sl}{avg(sl)})}\centerdot\frac{qf_i(k_2+1)}{qf_i+k_2}
+\end{equation}
+\begin{equation}
+	Score_{bm25}(Q, s_k) = \sum_{i}^{N}IDF(q_i, s_k)R(q_i, s_k)
+\end{equation}
+其中，$N$表示$Q$中的单词数量，$q_i$表示$Q$中的第$i$个单词，$k_1$、$k_2$和$b$是调节因子，其中$k_1$用于对查询词在文档中的词频进行调节，$b$调节文档长度对结果的影响，本节根据经验分别设置为2和0.75，$k_2$与$k_1$类似，其对查询词在输入句子中的词频进行调节，由于绝大部分情况下，$q_i$在句子中仅出现一次，即所有$q_i$的$qf_i$基本上都是一样的，因此$k_2$可以设置为0。$f_i$表示单词$q_i$在文档$s_k$中出现的频率，$qf_i$表示单词$q_i$在句子中出现的频率，$n_i$表示$q_i$在$s_k$出现的次数，$sl$为文档$s_k$的长度，$avg(sl)$为知识库中所有文档的平均长度。基于评分$Score_{bm25}$对所有文档进行排序，可得到文档排列$R_{bm25}$。
 
 然而，BM25存在数据稀疏问题，导致文档中的重要信息被忽略。基于双编码器（Bi-Encoder）的稠密向量检索方法能将文本映射为词嵌入向量，对目标词及其上下文进行建模，更好的捕捉到文本的语义信息，使得语义向量能够更好地表示用户问题的意图，获得更准确和全面的检索结果。因此本章同时还使用了基于双编码器的稠密检索方法，与稀疏检索互为补充。
 
@@ -349,6 +352,8 @@
 
 \subsection{与现有方法的性能比较}
 
+\textbf{知识问答任务} 本节使用人类和GPT-4作为评判员，对每个LLM在测试数据集上的回复效果进行评分。人工评判结果如表\ref{human_pk_table}所示，在三个不同垂直领域的数据集上，本章所提出的方法在内容有效性方面均优于其他LLM。其中，本章方法相比于未经知识对齐的ChatGLM模型在三个数据集上分别取得45\%、69\%和15\%的胜率，说明本章方法在不同领域上均能提升模型知识问答的回复质量。同时，FinMA和FinGPT是在其他金融领域数据集上微调的LLM，本章方法在AlphaFin-test上也分别取得84\%和38\%的胜率，这表明基于内外部知识对齐的微调方法能够提升模型对于垂直领域外部知识的理解能力，从而生成更准确、全面的回答。
+
 \begin{table}
 	\caption{\label{human_pk_table}人工对模型回复的偏好评价结果。}
 	\centering{}%
@@ -393,7 +398,15 @@
 	\end{tabular}
 \end{table}
 
-\textbf{知识问答任务} 本节使用人类和GPT-4作为评判员，对每个LLM在测试数据集上的回复效果进行评分。人工评判结果如表\ref{human_pk_table}所示，在三个不同垂直领域的数据集上，本章所提出的方法在内容有效性方面均优于其他LLM。其中，本章方法相比于未经知识对齐的ChatGLM模型在三个数据集上分别取得45\%、69\%和15\%的胜率，说明本章方法在不同领域上均能提升模型知识问答的回复质量。同时，FinMA和FinGPT是在其他金融领域数据集上微调的LLM，本章方法在AlphaFin-test上也分别取得84\%和38\%的胜率，这表明基于内外部知识对齐的微调方法能够提升模型对于垂直领域外部知识的理解能力，从而生成更准确、全面的回答。
+GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据集上，本章方法均取得优于其他基线方法的性能，GPT-4模型对不同方法的偏好评价与人工评判结果具有较高的一致性。GPT-4给倾向于给出明确的胜负结果，而“Tie”结果的比例显著低于人工评判结果，因此本章方法得到更高的胜率提升$\Delta$WR。值得注意的是，本章方法在CAIL2021数据集上相比于ChatGLM和ChatGPT的胜率提升均在10\%以下，这是因为CAIL2021数据集的问题答案均可在上下文片段中找到，对垂直领域内其他背景知识的依赖性不强，因此性能提升不显著。
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[scale=0.54]{Fig/stock_trend_exp.png}
+	\caption{\label{stock_trend_exp}不同方法在股票趋势预测任务上的累计收益情况。}
+\end{figure}
+
+另外，本节以金融领域为例，展示基线方法与本章方法的模型回复结果。从表\ref{res_compare_1}中可以看出，即使通过RAG方法提供了与用户问题中的“万科A”股票相关的研报和市场数据作为外部知识文档，FinMA、ChatGLM、FinGPT和ChatGPT模型仍然无法很好理解外部知识，并将其用于股票未来涨跌预测分析，从而做出了拒绝回答的决策，而通义金融模型则给出了不具有有效性、事实性的回复。从表\ref{res_compare_2}中可以看出，本章方法通过内外部知识对齐，使得模型具有良好的金融领域理解和分析能力，并学习到专业的输出范式，因此能够输出准确、全面、详实的分析过程，并最终给出明确的涨跌预测结果。
 
 \begin{table}
 	\caption{\label{res_compare_1}基线方法回复示例。}
@@ -412,8 +425,6 @@
 	\end{tabular}
 \end{table}
 
-GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据集上，本章方法均取得优于其他基线方法的性能，GPT-4模型对不同方法的偏好评价与人工评判结果具有较高的一致性。GPT-4给倾向于给出明确的胜负结果，而“Tie”结果的比例显著低于人工评判结果，因此本章方法得到更高的胜率提升$\Delta$WR。值得注意的是，本章方法在CAIL2021数据集上相比于ChatGLM和ChatGPT的胜率提升均在10\%以下，这是因为CAIL2021数据集的问题答案均可在上下文片段中找到，对垂直领域内其他背景知识的依赖性不强，因此性能提升不显著。
-
 \begin{table}
 	\caption{\label{res_compare_2}本章方法回复示例。}
 	\centering{}%
@@ -427,15 +438,7 @@ GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据
 	\end{tabular}
 \end{table}
 
-另外，本节以金融领域为例，展示基线方法与本章方法的模型回复结果。从表\ref{res_compare_1}中可以看出，即使通过RAG方法提供了与用户问题中的“万科A”股票相关的研报和市场数据作为外部知识文档，FinMA、ChatGLM、FinGPT和ChatGPT模型仍然无法很好理解外部知识，并将其用于股票未来涨跌预测分析，从而做出了拒绝回答的决策，而通义金融模型则给出了不具有有效性、事实性的回复。从表\ref{res_compare_2}中可以看出，本章方法通过内外部知识对齐，使得模型具有良好的金融领域理解和分析能力，并学习到专业的输出范式，因此能够输出准确、全面、详实的分析过程，并最终给出明确的涨跌预测结果。
-
 % \textbf{知识问答任务} 本节使用人类和GPT-4作为评判员，对每个LLM在测试数据集上的回复效果进行评分。人工评判结果如表\ref{human_pk_table}所示，本文所提出方法在内容有效性方面优于其他LLM。从表\ref{human_pk_table}可以看出，本文方法相比ChatGLM的胜率超过60\%，相比金融领域大模型如FinGPT的胜率达到62\%。GPT-4评判结果如表\ref{gpt_pk_table}，可以得出类似的结论。与人类评分相比，本章方法表现出更高的获胜率，对ChatGPT的胜率为58\%，对ChatGLM2的胜率为73\%。具体回复示例如表\ref{res_compare_1}和表\ref{res_compare_2}所示。
-
-\begin{figure}[htbp]
-	\centering
-	\includegraphics[scale=0.54]{Fig/stock_trend_exp.png}
-	\caption{\label{stock_trend_exp}不同方法在股票趋势预测任务上的累计收益情况。}
-\end{figure}
 
 \begin{table}
 	\caption{\label{stock_trend_pred_table}不同方法在股票趋势预测任务上的具体指标。}
@@ -663,7 +666,13 @@ GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据
 	\end{tabular}
 \end{table}
 
-本节通过设置消融实验探究不同LoRA秩对模型性能的影响，测试数据集为AlphaFin-test，实验结果如表\ref{lora_rank_ablation}所示。随着LoRA秩的增大，模型训练所消耗的显存和训练时长有轻微的增加。同时，LoRA秩在非常小的取值，如rank=1时，模型就已经表现出良好的Recall和Faithfulness性能。然而，模型性能并未与LoRA秩表现出正相关关系，本文认为这是因为ChatGLM2-6B模型在该项任务上的内在秩较小，因此选择较小的LoRA秩即可覆盖关键子空间。本章基于经验主义选择rank=8作为超参数LoRA秩的取值。
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[scale=0.55]{Fig/lora_rank_ablation.png}
+	\caption{\label{lora_rank_ablation_fig}不同LoRA对模型Recall和Faithfulness的影响。}
+\end{figure}
+
+本节通过设置消融实验探究不同LoRA秩对模型性能的影响，测试数据集为AlphaFin-test，实验结果如表\ref{lora_rank_ablation}所示。随着LoRA秩的增大，模型训练所消耗的显存和训练时长有轻微的增加。同时，如图\ref{lora_rank_ablation_fig}所示，LoRA秩在非常小的取值，如rank=1时，模型就已经表现出良好的Recall和Faithfulness性能。然而，模型性能并未与LoRA秩表现出明显的正相关关系，本文认为这是因为ChatGLM2-6B模型在该项任务上的内在秩较小，因此选择较小的LoRA秩即可覆盖关键子空间。本章基于经验主义选择rank=8作为超参数LoRA秩的取值。
 
 \section{本章小结}
 
