@@ -39,7 +39,7 @@
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[scale=0.65]{Fig/rag_framework.png}
-	\caption{\label{rag_framework}本章所提出的检索增强对话生成框架示意图。}
+	\caption{\label{rag_framework}本章所提出的检索增强对话生成框架示意图}
 \end{figure}
 
 针对以上问题，本章提出基于内外部知识对齐的检索增强对话生成方法。整体方法框架如图\ref{rag_framework}所示，整个框架主要包括三个部分：（1）对垂直领域知识文档进行多粒度语义切分，得到一系列垂直领域知识文档块，并构建外部知识库用于存储和检索这些知识文档块；（2）构建垂直领域数据集，为模型注入垂直领域的内部知识，同时与知识库中的外部知识进行对齐；（3）利用多级混合检索，对用户问题和知识库中的文档块计算语义相似度，得到与用户问题相关性最高的一系列文档块，最后与指令提示词拼接输入模型，得到回答。
@@ -49,14 +49,14 @@
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[scale=0.5]{Fig/split_chunk_module.png}
-	\caption{\label{split_chunk_module}对话框架中的多粒度语义切分模块示意图。}
+	\caption{\label{split_chunk_module}对话框架中的多粒度语义切分模块示意图}
 \end{figure}
 
 外部知识库的构建是检索增强生成中的重要组成部分，用于高效存储和检索相关知识文档。外部知识是指显式存储在外部知识库中的知识，内部知识是指通过模型训练隐式存储在神经网络权重中的知识，二者的数据来源和数据分布存在差异，导致检索增强对话生成存在性能瓶颈。为了实现外部知识与模型内部知识的对齐，本节提出一种基于多粒度语义切分的指令对生成方法，从文档中提取出关键信息，构成指令对数据，用于外部知识库和监督微调数据集的构建。如图\ref{split_chunk_module}所示，本章采用两种切分策略：粗粒度文档级总结和细粒度实体级Q\&A对生成，以得到包含不同层级信息的文档块。文档级文档块是对原始文档的高度压缩，通过丢弃一部分细粒度信息，来对齐知识文档和用户问题之间的语义空间，从而提升外部知识库在信息密集型知识文档上的检索准确度。实体级文档块捕获原始文档中单个实体的特征和上下文信息，提升外部知识召回准确度，避免噪音信息对模型生成回答产生干扰。粗粒度文档级文档块和细粒度实体级文档块有效地提高了知识文档信息的一致性和互补性，并提升单个文档块内的信噪比，从而优化模型生成的回答质量。
 其中，语义切分过程由人类垂直领域专家编写，或使用LLM（如ChatGPT模型）通过设计相应的提示词完成，本章所使用的语义切分提示词如表\ref{gen_finqa_prompt}所示。
 
 \begin{table}
-	\caption{\label{gen_finqa_prompt}知识文档语义切分提示词。}
+	\caption{\label{gen_finqa_prompt}知识文档语义切分提示词}
 	\centering{}%
 	\small 
 	\begin{tabular}{c}
@@ -84,12 +84,12 @@
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[scale=0.6]{Fig/finetune_align_process.png}
-	\caption{\label{finetune_align_process}基于两阶段微调的知识对齐过程示意图。}
+	\caption{\label{finetune_align_process}基于两阶段微调的知识对齐过程示意图}
 \end{figure}
 
 垂直领域知识与模型预训练阶段的通用领域知识存在较大的数据分布差距，其本质是垂直领域n-gram词汇的差异和语料上下文的差异。由于领域数据分布差距的存在，使用预训练LLM直接在垂直领域语料上微调不能达到最优的效果。因此本章使用两阶段微调策略，首先在较大数据量的垂直领域通用任务数据集上微调，引入垂直领域特定知识，适应垂直领域下游任务。其次，在较小数据量的高质量精标指令对数据集上微调，能够对垂直领域长尾数据的特征进行精准建模，提升模型对垂直领域知识的深度理解与推理能力。
 
-本节构建了垂直领域监督微调数据集用于训练对话模型，以弥合内外部知识之间的分布差异，从而提升语言模型在垂直领域知识密集型对话任务上的性能。如图\ref{finetune_align_process}所示，本节所构建的监督微调数据集包含两个部分：1）通用任务数据集，由较低难度的通用任务指令对数据构成，通过在互联网上搜集的垂直领域相关语料或开源数据集，经过清洗过滤后得到，包含情感分析、命名实体识别、文本分类、文本摘要等传统NLP任务，样本输出长度在100个标识符以内，用于增强模型在垂直领域的理解能力，缩小通用领域模型内部知识与垂直领域的差距，使得模型能更好地对齐垂直领域外部知识；2）精标指令数据集，由较高难度的逻辑推理、知识问答指令对数据构成，数据来源于多粒度语义切分后的垂直领域知识文档块，样本输出长度在100个标识符以上，用于对齐模型内部知识与外部知识的数据分布，使模型在垂直领域对话生成上达到最优效果。
+本节构建了垂直领域监督微调数据集用于训练对话模型，以弥合内外部知识之间的分布差异，从而提升语言模型在垂直领域知识密集型对话任务上的性能。如图\ref{finetune_align_process}所示，本节所构建的监督微调数据集包含两个部分：1）通用任务数据集，由较低难度的通用任务指令对数据构成，通过在互联网上搜集的垂直领域相关语料或开源数据集，经过清洗过滤后得到，包含情感分析、命名实体识别、文本分类、文本摘要等传统NLP任务，样本输出长度在100个标识符以内，用于增强模型在垂直领域的理解能力，缩小通用领域模型内部知识与垂直领域的差距，使得模型能更好地对齐垂直领域外部知识，数据量为10万到20万条样本左右；2）精标指令数据集，由较高难度的逻辑推理、知识问答指令对数据构成，数据来源于多粒度语义切分后的垂直领域知识文档块，样本输出长度在100个标识符以上，用于对齐模型内部知识与外部知识的数据分布，使模型在垂直领域对话生成上达到最优效果，数据量为1千到1万条样本左右。
 
 模型微调过程分为两个阶段：1）首先在通用任务数据集上进行指令微调，目的是将专业领域的基本知识注入模型内部；2）然后，在上一步微调后的模型基础上进行继续训练，以进一步对齐知识文档中的长尾知识与模型内部的知识，同时使模型学会复杂任务的输出格式。
 
@@ -105,7 +105,7 @@
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[scale=0.55]{Fig/search_module.png}
-	\caption{\label{search_module}对话框架中的多级混合检索模块示意图。}
+	\caption{\label{search_module}对话框架中的多级混合检索模块示意图}
 \end{figure}
 
 如图\ref{search_module}所示，多级混合检索模块主要包含三个步骤：（1）多路检索；（2）多路融合；（3）重排序。本节以文档级摘要切分策略为例，说明多级混合检索的具体计算过程。其中，对于细粒度实体级对话生成的切分策略，下式中的$s_k$和$d_k$可分别被替换为$q_{k\_}$和$a_{k\_}$。
@@ -182,7 +182,7 @@
 % \begin{figure}[htbp]
 % 	\centering
 % 	\includegraphics[scale=0.6]{Fig/dataset_process.png}
-% 	\caption{\label{dataset_process}数据集预处理过程示意图。}
+% 	\caption{\label{dataset_process}数据集预处理过程示意图}
 % \end{figure}
 
 % \textbf{通用金融数据集} 由传统金融开源数据集构成，如FPB\cite{DBLP:journals/jasis/MaloSKWT14}、FinQA\cite{DBLP:conf/acl/ZhuLHWZLFC20}、ConvFinQA\cite{DBLP:journals/corr/abs-2310-00566}、Headline\cite{DBLP:journals/corr/abs-2009-04202}等，涵盖情感分析、文本摘要等基础NLP任务。这些开源数据集均为英文数据集，因此本节从中采样一部分，用于增强模型的多语言能力、信息抽取能力和摘要能力。
@@ -192,7 +192,7 @@
 % \textbf{金融问答数据集} 爬取自开源金融数据接口库，如Tushare\cite{tushare}、AKshare\cite{akshare}等。该部分主要包含股票价格及其他财务信息的时序数据（例如[‘2023-10-02’: 172.40…‘2023-10-12’: 180.71, …]），然后基于多粒度语义分割模块，得到与数据相关的金融问答数据，如“根据如下资产负债表数据...，请计算出该公司的流动比率是多少？”。该数据集用于增强模型的数学逻辑能力。
 
 % \begin{table}
-% 	\caption{\label{financial_report_format}金融研报数据集样本格式。}
+% 	\caption{\label{financial_report_format}金融研报数据集样本格式}
 % 	\centering
 % 	\begin{tabular}{c|c|c}
 % 		\toprule[2pt]
@@ -224,7 +224,7 @@
 % \textbf{金融研报数据集} 分别从DataYes数据平台接口和TuShare、AKShare接口爬取股票研究报告和股票价格时序数据，股票研究报告包括证券公司对上市公司的专业分析。本节人工对齐公司的研究报告及其在报告发布当天的股票价格，并使用如表\ref{financial_report_format}所示的格式来构建样本输入部分，将股票在报告发布次月的真实股价涨跌情况作为样本输出。其中，金融研报数据集包含两种类型的数据：1）Raw类型，样本输出中仅包含股票涨跌结果和涨跌概率；2）CoT类型，在给出股票涨跌预测结果前，先对输入中的公司研报和市场数据信息进行基本面和技术面的详细分析和逻辑推导，作为模型推理思维链，这部分CoT分析由金融领域专家人工编写，以保证其正确性和质量。该数据集用于增强模型的金融分析能力，让模型学习金融分析的格式。
 
 % \begin{table}
-% 	\caption{\label{alphafin_info}AlphaFin数据集统计信息。}
+% 	\caption{\label{alphafin_info}AlphaFin数据集统计信息}
 % 	\centering
 % 	\begin{tabular}{lccccc}
 % 		\toprule[2pt]
@@ -304,7 +304,7 @@
 \subsection{实验细节}
 
 \begin{table}
-	\caption{\label{env_setting}实验环境配置参数。}
+	\caption{\label{env_setting}实验环境配置参数}
 	\centering
 	\begin{tabular}{ccc}
 		\toprule[2pt]
@@ -355,7 +355,7 @@
 \textbf{知识问答任务} 本节使用人类和GPT-4作为评判员，对每个LLM在测试数据集上的回复效果进行评分。人工评判结果如表\ref{human_pk_table}所示，在三个不同垂直领域的数据集上，本章所提出的方法在内容有效性方面均优于其他LLM。其中，本章方法相比于未经知识对齐的ChatGLM模型在三个数据集上分别取得45\%、69\%和15\%的胜率，说明本章方法在不同领域上均能提升模型知识问答的回复质量。同时，FinMA和FinGPT是在其他金融领域数据集上微调的LLM，本章方法在AlphaFin-test上也分别取得84\%和38\%的胜率，这表明基于内外部知识对齐的微调方法能够提升模型对于垂直领域外部知识的理解能力，从而生成更准确、全面的回答。
 
 \begin{table}
-	\caption{\label{human_pk_table}人工对模型回复的偏好评价结果。}
+	\caption{\label{human_pk_table}人工对模型回复的偏好评价结果}
 	\centering{}%
 	\small 
 	\begin{tabular}{llcccc}
@@ -377,7 +377,7 @@
 \end{table}
 
 \begin{table}
-	\caption{\label{gpt_pk_table}GPT-4模型对模型回复的偏好评价结果。}
+	\caption{\label{gpt_pk_table}GPT-4模型对模型回复的偏好评价结果}
 	\centering{}%
 	\small 
 	\begin{tabular}{llcccc}
@@ -403,13 +403,13 @@ GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[scale=0.54]{Fig/stock_trend_exp.png}
-	\caption{\label{stock_trend_exp}不同方法在股票趋势预测任务上的累计收益情况。}
+	\caption{\label{stock_trend_exp}不同方法在股票趋势预测任务上的累计收益情况}
 \end{figure}
 
 另外，本节以金融领域为例，展示基线方法与本章方法的模型回复结果。从表\ref{res_compare_1}中可以看出，即使通过RAG方法提供了与用户问题中的“万科A”股票相关的研报和市场数据作为外部知识文档，FinMA、ChatGLM、FinGPT和ChatGPT模型仍然无法很好理解外部知识，并将其用于股票未来涨跌预测分析，从而做出了拒绝回答的决策，而通义金融模型则给出了不具有有效性、事实性的回复。从表\ref{res_compare_2}中可以看出，本章方法通过内外部知识对齐，使得模型具有良好的金融领域理解和分析能力，并学习到专业的输出范式，因此能够输出准确、全面、详实的分析过程，并最终给出明确的涨跌预测结果。
 
 \begin{table}
-	\caption{\label{res_compare_1}基线方法回复示例。}
+	\caption{\label{res_compare_1}基线方法回复示例}
 	\centering{}%
 	\small 
 	\begin{tabular}{cp{13cm}}
@@ -426,7 +426,7 @@ GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据
 \end{table}
 
 \begin{table}
-	\caption{\label{res_compare_2}本章方法回复示例。}
+	\caption{\label{res_compare_2}本章方法回复示例}
 	\centering{}%
 	\small 
 	\begin{tabular}{cp{13cm}}
@@ -441,7 +441,7 @@ GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据
 % \textbf{知识问答任务} 本节使用人类和GPT-4作为评判员，对每个LLM在测试数据集上的回复效果进行评分。人工评判结果如表\ref{human_pk_table}所示，本文所提出方法在内容有效性方面优于其他LLM。从表\ref{human_pk_table}可以看出，本文方法相比ChatGLM的胜率超过60\%，相比金融领域大模型如FinGPT的胜率达到62\%。GPT-4评判结果如表\ref{gpt_pk_table}，可以得出类似的结论。与人类评分相比，本章方法表现出更高的获胜率，对ChatGPT的胜率为58\%，对ChatGLM2的胜率为73\%。具体回复示例如表\ref{res_compare_1}和表\ref{res_compare_2}所示。
 
 \begin{table}
-	\caption{\label{stock_trend_pred_table}不同方法在股票趋势预测任务上的具体指标。}
+	\caption{\label{stock_trend_pred_table}不同方法在股票趋势预测任务上的具体指标}
 	\centering{}%
 	\small 
 	\begin{tabular}{ccccccccc}
@@ -475,7 +475,7 @@ GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据
 \textbf{金融领域股票趋势预测任务} 如图\ref{stock_trend_exp}所示，曲线表示每种方法的年化收益。值得注意的是，从2023年开始，本章方法的收益达到最高并保持上升趋势。这表明了本章方法在投资中的有效性和可用性。同时，由表\ref{stock_trend_pred_table}可以得出以下结论：
 
 % \begin{table}
-% 	\caption{\label{arr_acc_table}不同方法在股票趋势预测任务上的年度收益率（ARR）和准确率（ACC）。}
+% 	\caption{\label{arr_acc_table}不同方法在股票趋势预测任务上的年度收益率（ARR）和准确率（ACC）}
 % 	\centering{}%
 % 	\small 
 % 	\begin{tabular}{cccc}
@@ -507,7 +507,7 @@ GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据
 % \end{table}
 
 % \begin{table}
-% 	\caption{\label{obv_indice_table}不同方法在股票趋势预测任务上的中间观察指标。}
+% 	\caption{\label{obv_indice_table}不同方法在股票趋势预测任务上的中间观察指标}
 % 	\centering{}%
 % 	\small 
 % 	\begin{tabular}{cccccc}
@@ -551,7 +551,7 @@ GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据
 \subsection{多级混合检索的有效性}
 
 \begin{table}
-	\caption{\label{search_module_evaluation}探究多级检索模块在Ragas评估指标上对性能的影响。}
+	\caption{\label{search_module_evaluation}探究多级检索模块在Ragas评估指标上对性能的影响}
 	\centering{}%
 	\small 
 	\begin{tabular}{lccc}
@@ -568,7 +568,7 @@ GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据
 本节对对话生成框架中的多级检索模块的有效性进行验证，对比没有多级检索模块、增加多路融合方法、增加交叉编码器重排序后，模型在AlphaFin-test数据集上的回复效果。从表\ref{search_module_evaluation}可以看出，增加多路融合方法后，各项指标均有小幅度的提升，增加重排序后，模型回复在所有指标上达到最优效果，表明多级检索模块对模型回复质量提升具有正向作用。同时，增加多级检索模块前后的回复结果如表\ref{search_evaluation_example}所示。
 
 \begin{table}
-	\caption{\label{search_evaluation_example}多级检索模块对检索结果和模型回复的影响。}
+	\caption{\label{search_evaluation_example}多级检索模块对检索结果和模型回复的影响}
 	\centering{}%
 	\small 
 	\begin{tabular}{c|c|c}
@@ -609,7 +609,7 @@ GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据
 \subsection{两阶段微调对性能的影响}
 
 \begin{table}
-	\caption{\label{dataset_ablation_qa}金融问答ROUGE指标下不同数据集对性能的影响。}
+	\caption{\label{dataset_ablation_qa}金融问答ROUGE指标下不同数据集对性能的影响}
 	\centering{}%
 	\small 
 	\begin{tabular}{llccc}
@@ -630,7 +630,7 @@ GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据
 首先，本实验研究了在精标指令数据集上微调LLM后，LLM回复内容与检索到的知识文档之间的ROUGE值。根据表\ref{dataset_ablation_qa}可以观察到，在通用任务数据集上训练后，模型在ROUGE-1和ROUGE-L上均有提升，在ROUGE-2上略有下降。在精标指令数据集上微调后，模型在三类ROUGE指标上均有所提升，且模型输出长度有所提升，本章方法在三类ROUGE指标上分别达到了0.4052、0.2956和0.4031，达到最优性能，这主要是因为精标指令数据集提升了模型对知识文档的理解能力和摘要能力，因此输出内容与知识文档的一致性更高。
 
 \begin{table}
-	\caption{\label{dataset_ablation_trend}股票涨跌预测指标下不同数据集对性能的影响。}
+	\caption{\label{dataset_ablation_trend}股票涨跌预测指标下不同数据集对性能的影响}
 	\centering{}%
 	\small 
 	\begin{tabular}{llcccc}
@@ -649,7 +649,7 @@ GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据
 \subsection{不同LoRA秩对性能的影响}
 
 \begin{table}
-	\caption{\label{lora_rank_ablation}不同LoRA秩对性能的影响。}
+	\caption{\label{lora_rank_ablation}不同LoRA秩对性能的影响}
 	\centering{}%
 	\small
 	\begin{tabular}{ccccc}
@@ -669,7 +669,7 @@ GPT-4模型的偏好评价结果如表\ref{gpt_pk_table}所示，在所有数据
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[scale=0.55]{Fig/lora_rank_ablation.png}
-	\caption{\label{lora_rank_ablation_fig}不同LoRA对模型Recall和Faithfulness的影响。}
+	\caption{\label{lora_rank_ablation_fig}不同LoRA秩对模型Recall和Faithfulness的影响}
 \end{figure}
 
 本节通过设置消融实验探究不同LoRA秩对模型性能的影响，测试数据集为AlphaFin-test，实验结果如表\ref{lora_rank_ablation}所示。随着LoRA秩的增大，模型训练所消耗的显存和训练时长有轻微的增加。同时，如图\ref{lora_rank_ablation_fig}所示，LoRA秩在非常小的取值，如rank=1时，模型就已经表现出良好的Recall和Faithfulness性能。然而，模型性能并未与LoRA秩表现出明显的正相关关系，本文认为这是因为ChatGLM2-6B模型在该项任务上的内在秩较小，因此选择较小的LoRA秩即可覆盖关键子空间。本章基于经验主义选择rank=8作为超参数LoRA秩的取值。

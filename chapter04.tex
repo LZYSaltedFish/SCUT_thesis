@@ -6,7 +6,7 @@
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[scale=0.45]{Fig/alignment_problem_show_case.png}
-	\caption{\label{alignment_problem_show_case}垂直领域对话场景下的模型理解偏差问题示例。}
+	\caption{\label{alignment_problem_show_case}垂直领域对话场景下的模型理解偏差问题示例}
 \end{figure}
 
 为了实现LLM的人类偏好对齐，Long等人\cite{DBLP:conf/nips/Ouyang0JAWMZASR22}提出了RLHF方法，首先采集高质量数据集对语言模型进行监督微调（SFT），再基于SFT模型的生成内容收集人类偏好排名数据集，并训练奖励模型（RM），最后执行PPO强化学习进一步微调SFT模型，显式地引入了人类偏好和主观意见，使得模型生成的内容更符合人类的偏好。然而，RLHF方法存在一定的局限性。一方面，RLHF需要大规模的人类偏好标注数据，垂直领域的训练数据则更加难以获取。另一方面，RLHF使用PPO强化学习来训练LLM，训练过程复杂且效果稳定性差。为了应对RLHF方法存在的问题，Rafailov等人\cite{DBLP:conf/nips/RafailovSMMEF23}提出DPO算法，通过引入SFT约束，在不降低性能的情况下提升训练的稳定性。Dong等人\cite{DBLP:journals/corr/abs-2304-06767}提出RAFT方法，无需使用强化学习，进一步提升稳定性和鲁棒性。Bai等人\cite{DBLP:journals/corr/abs-2212-08073}提出RLAIF方法，使用LLM代替人类完成偏好标注工作，一定程度上缓解了数据稀缺问题。然而，上述方法需要训练对话模型本身，随着大型语言模型的发展，对话模型尺寸也不断增大，且部分闭源模型只能通过API访问，因此基于训练的方法受到对话模型的尺寸和访问限制难以应用和迁移。
@@ -30,7 +30,7 @@
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[scale=0.57]{Fig/qahf_framework.png}
-	\caption{\label{qahf_framework}基于人类偏好对齐的检索增强对话生成框架图。}
+	\caption{\label{qahf_framework}基于人类偏好对齐的检索增强对话生成框架图}
 \end{figure}
 
 本章研究一种基于人类偏好对齐的检索增强对话生成的方法，该任务通常需要收集对话模型在各类真实场景下的对话，然后由人类完成偏好标注，最后通过PPO强化算法或其他算法训练对话模型，以达到偏好对齐的目的。而PPO强化学习在大型语言模型上非常具有挑战性，训练效果稳定性低。因此，本章提出基于人类反馈的问题对齐（Query Alignment with Human Feedback, QAHF），基于人类偏好反馈数据训练一个单独的问题优化器，避免直接训练对话模型，从而实现与模型无关的、非侵入的人类偏好对齐。如图\ref{qahf_framework}所示，QAHF方法主要包括四个阶段：1）人类偏好数据采集阶段；2）优化问题构建阶段；3）问题有效性验证阶段；4）问题优化器训练阶段。
@@ -103,7 +103,7 @@
 本节所使用的问题优化提示词如表\ref{query_optimize_prompt}所示。当模型输出结果不符合提示词中的输出格式要求时，后处理过程中无法提取出有效的优化问题。对此，本节的解决方法是，在后处理抛出匹配异常时，调整模型推理超参数，即提高temperature和top\_p，使预测词概率被拉平，并再次进行模型推理，以此循环直到模型输出符合预期格式要求。
 
 \begin{table}
-	\caption{\label{query_optimize_prompt}问题优化提示词格式。}
+	\caption{\label{query_optimize_prompt}问题优化提示词格式}
 	\centering{}%
 	\small 
 	\begin{tabular}{c}
@@ -122,7 +122,7 @@
 LLM生成的优化问题可能仍然存在理解偏差问题，这类无效样本将成为数据集噪声，若直接使用带噪声的数据进行后续模型训练，可能会进一步加重模型理解偏差，反而损害模型性能。因此，有必要对上一步骤所生成的优化问题数据进行筛选过滤，剔除对人类偏好对齐产生负向优化的低质量样本。相较于直接对数据集样本中的优化问题进行有效性评估，引入问题优化后的模型回复能够更好地观察优化问题对文档召回和回答生成的影响，从而提升有效性评估的准确率。因此，本节将优化后的用户问题重新输入系统，进行知识文档召回后得到新的模型回复，并利用大型语言模型的Self-Criticism能力\cite{DBLP:conf/emnlp/TanSQQQXQ23}，对新回复的质量进行评判，以筛选出有效的偏好数据样本，提高数据集信噪比，并得到最终的优化问题三元组数据集。与上一节相同，本节同样使用Zero-shot-CoT方法进行问题有效性验证，以提升LLM的准确性。
 
 \begin{table}
-	\caption{\label{query_validation_prompt}问题有效性验证提示词格式。}
+	\caption{\label{query_validation_prompt}问题有效性验证提示词格式}
 	\centering{}%
 	\small 
 	\begin{tabular}{c}
@@ -189,14 +189,14 @@ LLM生成的优化问题可能仍然存在理解偏差问题，这类无效样�
 	\item BPO\cite{DBLP:journals/corr/abs-2311-04155}：黑盒提示优化（Black-Box Prompt Optimization，BPO）算法，自动优化用户输入，以更好地适应LLM对改进响应的偏好。通过BPO对齐，无需进一步微调对话模型，即可对齐人类和模型之间的理解偏差。但本方法仅使用用户问题和模型回复构建偏序数据集，在检索增强应用场景下，没有考虑检索的知识文档信息，因此还有很大的空间可以进一步提升。
 \end{itemize}
 
-\subsection{实现细节}
+\subsection{实验细节}
 
 对于QAHF，本节使用Qwen-7B\cite{DBLP:journals/corr/abs-2309-16609}作为优化器的基座模型，在所构建的问题优化三元组数据集上对优化器模型训练了3个epoch。在训练阶段，本节使用AdamW优化器，$\beta1$=0.9和$\beta2$=0.999。本实验将学习率设置为2e-5，热启动步长为0.1\%，使用LinearLRScheduler学习率调度方法。每个GPU的Batch Size大小为4。对于RLHF训练，RM模型训练和PPO优化只训练1个epoch。其中，本实验RM模型的训练数据来自于本章方法所构建的人类偏好数据集，RM模型在同分布测试集上达到了78\%的准确率。所有实验均在8×80GB NVIDIA A800 GPU上进行。QAHF采用Top-P=0.9和Temperature=0.6的推理解码策略，另外，所有测试的基座模型都使用默认的解码策略。
 
 \subsection{与现有方法的性能比较}
 
 \begin{table}
-	\caption{\label{qahf_single_performance}QAHF在FinGPT-FiQA Eval和AlphaFin-test上的有效性实验。}
+	\caption{\label{qahf_single_performance}QAHF在FinGPT-FiQA Eval和AlphaFin-test上的有效性实验}
 	\centering
 	\begin{tabular}{lcc|ccc|ccc|c}
 		\toprule[2pt]
@@ -213,7 +213,7 @@ LLM生成的优化问题可能仍然存在理解偏差问题，这类无效样�
 \end{table}
 
 \begin{table}
-	\caption{\label{qahf_bpo_performance}QAHF与BPO在FinGPT-FiQA Eval和AlphaFin-test上的性能对比。}
+	\caption{\label{qahf_bpo_performance}QAHF与BPO在FinGPT-FiQA Eval和AlphaFin-test上的性能对比}
 	\centering
 	\begin{tabular}{lcc|ccc|ccc|c}
 		\toprule[2pt]
@@ -233,7 +233,7 @@ LLM生成的优化问题可能仍然存在理解偏差问题，这类无效样�
 \end{table}
 
 \begin{table}
-	\caption{\label{qahf_bpo_aliyun_performance}QAHF与BPO在Aliyun-Docs上的性能对比。}
+	\caption{\label{qahf_bpo_aliyun_performance}QAHF与BPO在Aliyun-Docs上的性能对比}
 	\centering
 	\begin{tabular}{lcc|ccc|c}
 		\toprule[2pt]
@@ -259,7 +259,7 @@ LLM生成的优化问题可能仍然存在理解偏差问题，这类无效样�
 如表\ref{qahf_bpo_aliyun_performance}所示，由于Aliyun-Docs为私有领域产品相关数据，长尾效应显著，使用BPO方法直接对用户问题进行优化，在ChatGLM模型上产生了负向收益，反而加大了模型的理解偏差。而使用QAHF方法，在问题优化过程中引入外部知识文档，使得ChatGLM模型和ChatGPT模型在问题优化后均能获得较高的胜率提升。
 
 \begin{table}
-	\caption{\label{qahf_ppo_performance}QAHF与PPO在AlphaFin-test上的性能对比。}
+	\caption{\label{qahf_ppo_performance}QAHF与PPO在AlphaFin-test上的性能对比}
 	\centering
 	\begin{tabular}{lcc|ccc|c}
 		\toprule[2pt]
@@ -275,7 +275,7 @@ LLM生成的优化问题可能仍然存在理解偏差问题，这类无效样�
 \end{table}
 
 \begin{table}
-	\caption{\label{query_compare_sota}使用不同对齐方法优化后的用户问题对比。}
+	\caption{\label{query_compare_sota}使用不同对齐方法优化后的用户问题对比}
 	\centering
 	\begin{tabular}{cc}
 		\toprule[2pt]
@@ -299,7 +299,7 @@ LLM生成的优化问题可能仍然存在理解偏差问题，这类无效样�
 \end{table}
 
 \begin{table}
-	\caption{\label{response_compare_sota}使用不同对齐方法优化用户问题后得到的模型回复对比。}
+	\caption{\label{response_compare_sota}使用不同对齐方法优化用户问题后得到的模型回复对比}
 	\centering
 	\begin{tabular}{cc}
 		\toprule[2pt]
@@ -331,7 +331,7 @@ LLM生成的优化问题可能仍然存在理解偏差问题，这类无效样�
 \subsection{人类反馈对方法性能的影响}
 
 \begin{table}
-	\caption{\label{human_feedback_pk}在偏好评价指标上人类反馈对性能的影响。}
+	\caption{\label{human_feedback_pk}在偏好评价指标上人类反馈对性能的影响}
 	\centering
 	\begin{tabular}{lcc|ccc|c}
 		\toprule[2pt]
@@ -355,12 +355,12 @@ QAHF的一个重要组成部分是利用人类反馈来优化用户问题。为�
 	\begin{minipage}[t]{0.49\textwidth}
 		\centering
 		\includegraphics[width=7cm]{Fig/multi_iter_optimize_ragas_faithfulness.png}
-		\caption{\label{multi_iter_optimize_ragas_faithfulness}不同迭代优化次数对可信度的影响。}
+		\caption{\label{multi_iter_optimize_ragas_faithfulness}不同迭代优化次数对可信度的影响}
 	\end{minipage}
 	\begin{minipage}[t]{0.49\textwidth}
 		\centering
 		\includegraphics[width=7cm]{Fig/multi_iter_optimize_ragas_precision.png}
-		\caption{\label{multi_iter_optimize_ragas_precision}不同迭代优化次数对上下文准确率的影响。}
+		\caption{\label{multi_iter_optimize_ragas_precision}不同迭代优化次数对上下文准确率的影响}
 	\end{minipage}
 \end{figure}
 
@@ -371,7 +371,7 @@ QAHF的一个重要组成部分是利用人类反馈来优化用户问题。为�
 \subsection{问题有效性验证模块的有效性}
 
 \begin{table}
-	\caption{\label{evaluation_pk_fiqa}在FinGPT-FiQA数据集上探究问题有效性验证模块对性能的影响。}
+	\caption{\label{evaluation_pk_fiqa}在FinGPT-FiQA数据集上探究问题有效性验证模块对性能的影响}
 	\centering
 	\begin{tabular}{lcc|ccc|c}
 		\toprule[2pt]
@@ -388,7 +388,7 @@ QAHF的一个重要组成部分是利用人类反馈来优化用户问题。为�
 
 
 \begin{table}
-	\caption{\label{evaluation_pk_alphafin}在AlphaFin-test数据集上探究问题有效性验证模块对性能的影响。}
+	\caption{\label{evaluation_pk_alphafin}在AlphaFin-test数据集上探究问题有效性验证模块对性能的影响}
 	\centering
 	\begin{tabular}{lcc|ccc|c}
 		\toprule[2pt]
@@ -406,7 +406,7 @@ QAHF的一个重要组成部分是利用人类反馈来优化用户问题。为�
 QAHF的一个重要组成部分是利用反馈来优化用户指令。为了研究反馈对QAHF的快速优化有多大贡献，进行了消融实验，以比较反馈学习优化(QAHF)和直接使用ChatGPT进行快速优化。如表\ref{evaluation_pk_fiqa}和表\ref{evaluation_pk_alphafin}所示，直接优化可以提高模型性能，这验证了LLM成为良好提示工程师的潜力。QAHF提供了超越直接优化的进一步改进。这表明，纳入反馈允许LLM根据所展示的用户偏好来完善提示，从而实现更有效的提示优化。
 
 \begin{table}
-	\caption{\label{evaluation_ragas}在Ragas指标上问题有效性验证模块对性能的影响。}
+	\caption{\label{evaluation_ragas}在Ragas指标上问题有效性验证模块对性能的影响}
 	\centering
 	\begin{tabular}{c|cccc}
 		\toprule[2pt]
@@ -420,7 +420,7 @@ QAHF的一个重要组成部分是利用反馈来优化用户指令。为了研�
 \end{table}
 
 \begin{table}
-	\caption{\label{valid_invalid_example}有效样本与无效样本对比。}
+	\caption{\label{valid_invalid_example}有效样本与无效样本对比}
 	\centering
 	\begin{tabular}{c|c|c}
 		\toprule[2pt]
